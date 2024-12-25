@@ -2,6 +2,8 @@ DROP TABLE Timetables;
 DROP TABLE LineStopRelation;
 DROP TABLE Stops;
 DROP TABLE Lines;
+DROP TABLE Tickets;
+DROP TABLE TicketSales;
 
 CREATE TABLE Stops(
 	ID INT IDENTITY(0, 1),
@@ -35,6 +37,24 @@ CREATE TABLE Timetables(
 	CONSTRAINT FK_ID_LineStopRelation FOREIGN KEY(ID_LineStopRelation) REFERENCES LineStopRelation(ID),
 	CONSTRAINT CK_Direction CHECK (Direction IN (N'A', N'B'))
 )
+
+CREATE TABLE Tickets (
+    ID INT IDENTITY(0, 1) PRIMARY KEY,
+    Price MONEY NOT NULL,
+    DurationMinutes INT NOT NULL,
+    Type NVARCHAR(10) NOT NULL,
+    CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
+);
+
+CREATE TABLE TicketSales (
+    ID INT IDENTITY(0, 1) PRIMARY KEY,                 
+    TicketID INT NOT NULL,                             
+    Quantity INT NOT NULL CHECK (Quantity > 0),        
+    LineID INT NOT NULL,                               
+    SaleDate DATE NOT NULL DEFAULT GETDATE(),          
+    CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID), 
+    CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID) 
+  );
 
 INSERT INTO Stops VALUES
 (N'Kurczaki'),
@@ -123,10 +143,33 @@ INSERT INTO Timetables VALUES
 (43, '08:18:00', 'A'), (43, '18:20:00', 'A'), (43, '14:56:00', 'B'), (43, '19:15:00', 'B'),
 (44, '08:25:00', 'A'), (44, '18:23:00', 'A'), (44, '14:48:00', 'B'), (44, '19:11:00', 'B'),
 (45, '08:40:00', 'A'), (45, '18:27:00', 'A'), (45, '14:43:00', 'B'), (45, '19:06:00', 'B')
+
+INSERT INTO Tickets (Price, DurationMinutes, Type)
+VALUES 
+    (10.00, 60, N'reduced'),  
+    (15.00, 60, N'standard'), 
+    (20.00, 120, N'reduced'), 
+    (30.00, 120, N'standard'),
+    (5.00, 30, N'reduced'),   
+    (7.50, 30, N'standard');
+
+INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
+(2, 3, 1, '2025-01-01'), 
+(4, 1, 3, '2025-01-01'), 
+(5, 4, 1, '2025-01-03'), 
+(1, 1, 1, '2025-01-04'),
+(3, 1, 4, '2025-02-01'),  
+(1, 3, 2, '2025-02-03'), 
+(0, 2, 6, '2025-02-05'), 
+(1, 1, 2, '2025-02-05');
+
+  SELECT * FROM TicketSales    
+--SELECT * FROM Tickets
+--SELECT * FROM LineStopRelation
+--SELECT * FROM Timetables
 --SELECT * FROM Lines ORDER BY Lines.ID
 --SELECT * FROM Stops ORDER BY Stops.ID
-SELECT * FROM LineStopRelation
-SELECT * FROM Timetables
+
 
 
 
