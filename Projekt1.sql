@@ -1,9 +1,16 @@
 DROP TABLE Timetables;
+DROP TABLE TicketSales;
 DROP TABLE LineStopRelation;
 DROP TABLE Stops;
 DROP TABLE Lines;
+DROP TABLE Vehicles;
+DROP TABLE Types;
 DROP TABLE Tickets;
-DROP TABLE TicketSales;
+DROP TABLE Drivers;
+DROP TABLE Mechanics;
+DROP TABLE Inspectors;
+DROP TABLE Employees;
+
 
 CREATE TABLE Stops(
 	ID INT IDENTITY(0, 1),
@@ -35,7 +42,37 @@ CREATE TABLE Timetables(
 	Direction NCHAR NOT NULL,
 	CONSTRAINT PK_Timetables PRIMARY KEY(ID),
 	CONSTRAINT FK_ID_LineStopRelation FOREIGN KEY(ID_LineStopRelation) REFERENCES LineStopRelation(ID),
-	CONSTRAINT CK_Direction CHECK (Direction IN (N'A', N'B'))
+	CONSTRAINT CHK_Direction_AB CHECK (Direction IN (N'A', N'B'))
+)
+
+CREATE TABLE Types(
+	ID INT IDENTITY(0, 1),
+	Description NVARCHAR(256) NOT NULL,
+	Category NCHAR NOT NULL,
+	NumberOfSeats INT NOT NULL,
+	CONSTRAINT PK_Types PRIMARY KEY(ID),
+	CONSTRAINT CK_Category_AT CHECK (Category IN (N'A', N'T'))
+)
+
+CREATE TABLE Vehicles(
+	ID INT IDENTITY(0, 1),
+	ID_Type INT NOT NULL,
+	ProductionDate DATE NOT NULL,
+	LastInspectionDate DATE NOT NULL,
+	CONSTRAINT PK_Vehicles PRIMARY KEY(ID),
+	CONSTRAINT FK_ID_Type FOREIGN KEY(ID_Type) REFERENCES Types(ID)
+)
+
+CREATE TABLE Employees(
+	ID INT IDENTITY(0, 1),
+	FirstName NVARCHAR(128) NOT NULL,
+	LastName NVARCHAR(128) NOT NULL,
+	PESEL NVARCHAR(11) NOT NULL,
+	DateOfBirth DATE NOT NULL,
+	DateOfEmployment DATE NOT NULL,
+	Salary MONEY NOT NULL,
+	CONSTRAINT PK_Employees PRIMARY KEY(ID),
+	CONSTRAINT UC_PESEL UNIQUE(PESEL)
 )
 
 CREATE TABLE Tickets (
@@ -55,6 +92,24 @@ CREATE TABLE TicketSales (
     CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID), 
     CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID) 
   );
+
+CREATE TABLE Drivers(
+	ID_Driver INT NOT NULL UNIQUE,
+	DrivingLicense NVARCHAR(10) NOT NULL,
+	CONSTRAINT FK_ID_Driver FOREIGN KEY(ID_Driver) REFERENCES Employees(ID)
+)
+
+CREATE TABLE Mechanics(
+	ID_Mechanic INT NOT NULL UNIQUE,
+	Specialization NVARCHAR(10) NOT NULL,
+	CONSTRAINT FK_ID_Mechanic FOREIGN KEY(ID_Mechanic) REFERENCES Employees(ID)
+)
+
+CREATE TABLE Inspectors(
+	ID_inspector INT NOT NULL UNIQUE,
+	ForeignLanguages NVARCHAR(10) NOT NULL,
+	CONSTRAINT FK_ID_Inspector FOREIGN KEY(ID_Inspector) REFERENCES Employees(ID)
+)
 
 INSERT INTO Stops VALUES
 (N'Kurczaki'),
@@ -144,14 +199,25 @@ INSERT INTO Timetables VALUES
 (44, '08:25:00', 'A'), (44, '18:23:00', 'A'), (44, '14:48:00', 'B'), (44, '19:11:00', 'B'),
 (45, '08:40:00', 'A'), (45, '18:27:00', 'A'), (45, '14:43:00', 'B'), (45, '19:06:00', 'B')
 
-INSERT INTO Tickets (Price, DurationMinutes, Type)
-VALUES 
-    (10.00, 60, N'reduced'),  
-    (15.00, 60, N'standard'), 
-    (20.00, 120, N'reduced'), 
-    (30.00, 120, N'standard'),
-    (5.00, 30, N'reduced'),   
-    (7.50, 30, N'standard');
+INSERT INTO Types VALUES
+(N'PESA 122N', N'T', 63), (N'Konstal 805Na', N'T', 20), (N'Siemens NF6D', N'T', 72),
+(N'Solaris Urbino 18', N'A', 40),  (N'Mercedes Benz 628 Conecto LF', N'A', 29),  (N'Isuzu NovoCiti Life', N'A', 24)
+
+INSERT INTO Vehicles VALUES
+(0, '2009-12-01', '2024-05-06'), (0, '2012-04-26', '2023-11-20'), (0, '2009-12-05', '2024-07-12'),
+(1, '1987-03-31', '2023-12-31'), (1, '1978-04-04', '2024-02-29'), (1, '1983-02-16', '2024-11-13'), (1, '1994-05-28', '2024-08-14'),
+(2, '1992-07-29', '2023-07-15'), (2, '1992-08-07', '2024-01-08'),
+(3, '2023-06-03', '2024-05-08'), (3, '2023-05-27', '2024-04-11'),
+(4, '2010-09-16', '2024-12-22'), (4, '2010-03-22', '2024-02-05'),
+(5, '2018-11-18', '2023-01-07'), (5, '2018-03-23', '2024-04-01'), (5, '2018-04-19', '2023-05-24'), (5, '2018-05-11', '2024-07-09')
+
+INSERT INTO Tickets (Price, DurationMinutes, Type) VALUES 
+(10.00, 60, N'reduced'),  
+(15.00, 60, N'standard'), 
+(20.00, 120, N'reduced'), 
+(30.00, 120, N'standard'),
+(5.00, 30, N'reduced'),   
+(7.50, 30, N'standard');
 
 INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
 (2, 3, 1, '2025-01-01'), 
@@ -163,13 +229,30 @@ INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
 (0, 2, 6, '2025-02-05'), 
 (1, 1, 2, '2025-02-05');
 
-  SELECT * FROM TicketSales    
---SELECT * FROM Tickets
---SELECT * FROM LineStopRelation
---SELECT * FROM Timetables
---SELECT * FROM Lines ORDER BY Lines.ID
---SELECT * FROM Stops ORDER BY Stops.ID
+INSERT INTO Employees VALUES
+(N'Barbara', N'Ostaszewska', '89070785765', '1989-07-07', '2014-06-07', 8700),
+(N'Jan', N'Kowalski', '91041617614', '1991-04-16', '2015-02-09', 5600),
+(N'Anastazja', N'Ćwiklińska', '76061516424', '1976-06-15', '1999-01-17', 6300),
+(N'Janina', N'Stefańska', '76061714723', '1976-06-17', '1996-09-30', 7340),
+(N'Stefan', N'Nowak', '03222855614', '2003-02-28', '2022-12-04', 6390),
+(N'Mateusz', N'Rachwał', '82052342974', '1982-05-23', '2002-05-07', 7800),
+(N'Borys', N'Wilczyński', '86071815158', '1986-07-18', '2011-11-11', 5440),
+(N'Adam', N'Glapiński', '02260146452', '2002-06-01', '2024-06-12', 5890),
+(N'Amelia', N'Królak', '90042336245', '1990-04-23', '2007-01-16', 7600),
+(N'Nikola', N'Skurzewska', '00270836226', '2000-07-08', '2019-03-25', 5980),
+(N'Ada', N'Dziedzina', '82050144622', '1982-05-01', '2014-10-31', 6700),
+(N'Alodia', N'Rutkowska', '93120723487', '1993-12-07', '2018-07-27', 7610)
 
+INSERT INTO Drivers VALUES
+(1, N'AT'), (2, 'A'), (3, 'T'), (4, 'AT'), (10, 'AT')
+
+INSERT INTO Mechanics VALUES
+(0, N'A'), (8, N'T'), (9, N'A')
+
+INSERT INTO Inspectors VALUES
+(5, N'EDR'), (6, N'E'), (7, N'ER'), (11, N'R')
+
+SELECT * FROM Employees
 
 
 
