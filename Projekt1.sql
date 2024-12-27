@@ -30,6 +30,10 @@ IF OBJECT_ID('Employees', 'U') IS NOT NULL
 	DROP TABLE Employees;
 IF OBJECT_ID('Depots', 'U') IS NOT NULL
 	DROP TABLE Depots;
+IF OBJECT_ID('ControlData', 'U') IS NOT NULL
+	DROP TABLE ControlData;
+IF OBJECT_ID('VehicleFailures', 'U') IS NOT NULL
+    DROP TABLE VehicleFailures;
 
 CREATE TABLE Stops(
 	ID INT IDENTITY(0, 1),
@@ -169,6 +173,27 @@ CREATE TABLE MechanicDepotMap(
 	CONSTRAINT FK_ID_Depot_MechanicDepotMap FOREIGN KEY (ID_Depot) REFERENCES Depots(ID)
 );
 
+CREATE TABLE ControlData (
+    ID INT IDENTITY(0, 1) PRIMARY KEY,
+    ID_Inspector INT NOT NULL,
+    ID_Line INT NOT NULL,
+    Date DATE NOT NULL,
+    NumberOfFines INT NOT NULL,
+    CONSTRAINT FK_ID_Inspector_ControlData FOREIGN KEY (ID_Inspector) REFERENCES Inspectors(ID_Inspector),
+    CONSTRAINT FK_ID_Line_ControlData FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
+);
+
+CREATE TABLE VehicleFailures (
+    ID INT IDENTITY(0, 1) PRIMARY KEY,
+    ID_Vehicle INT NOT NULL,
+    ID_Mechanic INT NOT NULL,
+    ReportDate DATE NOT NULL,
+    RepairDate DATE DEFAULT NULL,
+    Description NVARCHAR(MAX),
+    CONSTRAINT FK_ID_Vehicle FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
+    CONSTRAINT FK_ID_MechanicVF FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic)
+);
+
 INSERT INTO Stops VALUES
 (N'Kurczaki'),
 (N'Paderewskiego'),
@@ -285,7 +310,37 @@ INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
 (3, 1, 4, '2025-02-01'),  
 (1, 3, 2, '2025-02-03'), 
 (0, 2, 6, '2025-02-05'), 
-(1, 1, 2, '2025-02-05');
+(1, 1, 2, '2025-02-05'),
+(3, 2, 5, '2024-01-15'), 
+(1, 1, 3, '2024-02-20'), 
+(4, 3, 2, '2024-03-25'), 
+(2, 2, 6, '2024-04-10'), 
+(0, 1, 1, '2024-05-05'), 
+(5, 3, 4, '2024-06-15'), 
+(2, 2, 0, '2024-07-20'), 
+(3, 1, 3, '2024-08-25'), 
+(1, 2, 5, '2024-09-30'), 
+(4, 3, 6, '2024-10-15'), 
+(0, 1, 2, '2024-11-20'), 
+(5, 2, 1, '2024-12-25'), 
+(2, 3, 4, '2025-01-10'), 
+(3, 1, 0, '2025-02-15'), 
+(1, 2, 3, '2025-03-20'), 
+(4, 3, 5, '2025-04-25'), 
+(0, 1, 6, '2025-05-10'), 
+(5, 2, 2, '2025-06-15'), 
+(2, 3, 1, '2025-07-20'), 
+(3, 1, 4, '2025-08-25'), 
+(1, 2, 0, '2025-09-30'), 
+(4, 3, 3, '2025-10-15'), 
+(0, 1, 5, '2025-11-20'), 
+(5, 2, 6, '2025-12-25'), 
+(2, 3, 2, '2024-01-10'), 
+(3, 1, 1, '2024-02-15'), 
+(1, 2, 4, '2024-03-20'), 
+(4, 3, 0, '2024-04-25'), 
+(0, 1, 3, '2024-05-10'), 
+(5, 2, 5, '2024-06-15');
 
 INSERT INTO Employees VALUES
 (N'Barbara', N'Ostaszewska', '89070785765', '1989-07-07', '2014-06-07', 8700),
@@ -329,6 +384,42 @@ INSERT INTO VehicleDepotMap VALUES
 
 INSERT INTO MechanicDepotMap VALUES
 (0, 0), (8,2), (8, 3), (9, 0), (9, 1);
+
+INSERT INTO ControlData (ID_Inspector, ID_Line, Date, NumberOfFines) VALUES
+(6, 1, '2024-01-15', 5),
+(7, 2, '2024-02-20', 3),
+(11, 3, '2024-03-25', 4),
+(5, 4, '2024-04-10', 0),
+(6, 5, '2024-05-05', 6),
+(6, 2, '2024-06-15', 1),
+(7, 1, '2024-07-20', 3),
+(11, 2, '2024-08-25', 5),
+(11, 4, '2024-09-30', 2),
+(5, 5, '2024-10-15', 0),
+(6, 1, '2024-11-20', 3),
+(7, 2, '2024-12-25', 6),
+(11, 1, '2025-01-10', 2),
+(7, 4, '2025-02-15', 4),
+(11, 5, '2025-03-20', 1),
+(6, 0, '2025-04-25', 0),
+(7, 1, '2025-05-10', 3),
+(11, 2, '2025-06-15', 2),
+(6, 4, '2025-07-20', 4),
+(7, 0, '2025-08-25', 6),
+(6, 3, '2025-09-30', 1),
+(5, 0, '2025-10-15', 0),
+(11, 1, '2025-11-20', 3),
+(6, 2, '2025-12-25', 2),
+(7, 1, '2024-01-10', 0);
+
+INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, Description) VALUES
+(0, 8, '2024-01-15', '2024-01-20', 'Engine malfunction'),
+(1, 8, '2024-02-10', '2024-02-15', 'Brake system failure'),
+(2, 8, '2024-03-05', '2024-03-10', 'Transmission issue'),
+(3, 9, '2024-04-01', '2024-04-07', 'Electrical problem'),
+(4, 0, '2024-05-12', '2024-05-18', 'Suspension damage'),
+(5, 9, '2025-06-20', NULL, 'Cooling system leak');
+
 
 
 
