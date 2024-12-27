@@ -1,39 +1,58 @@
-DROP TABLE Timetables;
-DROP TABLE TicketSales;
-DROP TABLE LineStopRelation;
-DROP TABLE Stops;
-DROP TABLE Lines;
-DROP TABLE Vehicles;
-DROP TABLE Types;
-DROP TABLE Tickets;
-DROP TABLE Drivers;
-DROP TABLE Mechanics;
-DROP TABLE Inspectors;
-DROP TABLE Employees;
-
+IF OBJECT_ID('Timetables', 'U') IS NOT NULL
+	DROP TABLE Timetables;
+IF OBJECT_ID('TicketSales', 'U') IS NOT NULL
+	DROP TABLE TicketSales;
+IF OBJECT_ID('LineStopMap', 'U') IS NOT NULL
+	DROP TABLE LineStopMap;
+IF OBJECT_ID('LineDriverMap', 'U') IS NOT NULL
+	DROP TABLE LineDriverMap;
+IF OBJECT_ID('Stops', 'U') IS NOT NULL
+	DROP TABLE Stops;
+IF OBJECT_ID('Lines', 'U') IS NOT NULL
+	DROP TABLE Lines;
+IF OBJECT_ID('VehicleDepotMap', 'U') IS NOT NULL
+	DROP TABLE VehicleDepotMap;
+IF OBJECT_ID('Vehicles', 'U') IS NOT NULL
+	DROP TABLE Vehicles;
+IF OBJECT_ID('Types', 'U') IS NOT NULL
+	DROP TABLE Types;
+IF OBJECT_ID('Tickets', 'U') IS NOT NULL
+	DROP TABLE Tickets;
+IF OBJECT_ID('Drivers', 'U') IS NOT NULL
+	DROP TABLE Drivers;
+IF OBJECT_ID('MechanicDepotMap', 'U') IS NOT NULL
+	DROP TABLE MechanicDepotMap;
+IF OBJECT_ID('Mechanics', 'U') IS NOT NULL
+	DROP TABLE Mechanics;
+IF OBJECT_ID('Inspectors', 'U') IS NOT NULL
+	DROP TABLE Inspectors;
+IF OBJECT_ID('Employees', 'U') IS NOT NULL
+	DROP TABLE Employees;
+IF OBJECT_ID('Depots', 'U') IS NOT NULL
+	DROP TABLE Depots;
 
 CREATE TABLE Stops(
 	ID INT IDENTITY(0, 1),
 	Name NVARCHAR(256) UNIQUE NOT NULL,
 	CONSTRAINT PK_Stops PRIMARY KEY(ID)
-)
+);
 
 CREATE TABLE Lines(
 	ID INT IDENTITY(0, 1),
 	Name NVARCHAR(10) UNIQUE NOT NULL,
 	CONSTRAINT PK_Lines PRIMARY KEY(ID)
-)
+);
 
-CREATE TABLE LineStopRelation(
+CREATE TABLE LineStopMap(
 	ID INT IDENTITY(0, 1),
 	ID_Line INT NOT NULL,
 	ID_Stop INT NOT NULL,
 	StopOrder INT NOT NULL,
-	CONSTRAINT PK_LineStopRelation PRIMARY KEY (ID),
+	CONSTRAINT PK_LineStopMap PRIMARY KEY (ID),
 	CONSTRAINT UC_LineStopOrder UNIQUE(ID_Line, StopOrder),
-	CONSTRAINT FK_ID_Stop FOREIGN KEY(ID_Stop) REFERENCES Stops(ID),
-	CONSTRAINT FK_ID_Line FOREIGN KEY(ID_Line) REFERENCES Lines(ID),
-)
+	CONSTRAINT FK_ID_Stop_LineStopMap FOREIGN KEY(ID_Stop) REFERENCES Stops(ID),
+	CONSTRAINT FK_ID_Line_LineStopMap FOREIGN KEY(ID_Line) REFERENCES Lines(ID),
+);
 
 CREATE TABLE Timetables(
 	ID INT IDENTITY(0, 1),
@@ -41,9 +60,9 @@ CREATE TABLE Timetables(
 	Time TIME(0) NOT NULL,
 	Direction NCHAR NOT NULL,
 	CONSTRAINT PK_Timetables PRIMARY KEY(ID),
-	CONSTRAINT FK_ID_LineStopRelation FOREIGN KEY(ID_LineStopRelation) REFERENCES LineStopRelation(ID),
+	CONSTRAINT FK_ID_LineStopRelation FOREIGN KEY(ID_LineStopRelation) REFERENCES LineStopMap(ID),
 	CONSTRAINT CHK_Direction_AB CHECK (Direction IN (N'A', N'B'))
-)
+);
 
 CREATE TABLE Types(
 	ID INT IDENTITY(0, 1),
@@ -51,8 +70,8 @@ CREATE TABLE Types(
 	Category NCHAR NOT NULL,
 	NumberOfSeats INT NOT NULL,
 	CONSTRAINT PK_Types PRIMARY KEY(ID),
-	CONSTRAINT CK_Category_AT CHECK (Category IN (N'A', N'T'))
-)
+	CONSTRAINT CK_Category_Types CHECK (Category IN (N'A', N'T'))
+);
 
 CREATE TABLE Vehicles(
 	ID INT IDENTITY(0, 1),
@@ -61,7 +80,7 @@ CREATE TABLE Vehicles(
 	LastInspectionDate DATE NOT NULL,
 	CONSTRAINT PK_Vehicles PRIMARY KEY(ID),
 	CONSTRAINT FK_ID_Type FOREIGN KEY(ID_Type) REFERENCES Types(ID)
-)
+);
 
 CREATE TABLE Employees(
 	ID INT IDENTITY(0, 1),
@@ -73,43 +92,82 @@ CREATE TABLE Employees(
 	Salary MONEY NOT NULL,
 	CONSTRAINT PK_Employees PRIMARY KEY(ID),
 	CONSTRAINT UC_PESEL UNIQUE(PESEL)
-)
+);
 
 CREATE TABLE Tickets (
-    ID INT IDENTITY(0, 1) PRIMARY KEY,
+    ID INT IDENTITY(0, 1),
     Price MONEY NOT NULL,
     DurationMinutes INT NOT NULL,
     Type NVARCHAR(10) NOT NULL,
+	CONSTRAINT PK_Tickets PRIMARY KEY (ID),
     CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
 );
 
 CREATE TABLE TicketSales (
-    ID INT IDENTITY(0, 1) PRIMARY KEY,                 
-    TicketID INT NOT NULL,                             
-    Quantity INT NOT NULL CHECK (Quantity > 0),        
-    LineID INT NOT NULL,                               
-    SaleDate DATE NOT NULL DEFAULT GETDATE(),          
-    CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID), 
-    CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID) 
-  );
+    ID INT IDENTITY(0, 1),
+	TicketID INT NOT NULL,
+    Quantity INT NOT NULL,
+    LineID INT NOT NULL,
+    SaleDate DATE NOT NULL DEFAULT GETDATE(),
+	CONSTRAINT PK_TicketSales PRIMARY KEY(ID),
+    CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID),
+    CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID),
+	CONSTRAINT CK_Quantity CHECK (Quantity > 0)
+);
 
 CREATE TABLE Drivers(
 	ID_Driver INT NOT NULL UNIQUE,
 	DrivingLicense NVARCHAR(10) NOT NULL,
 	CONSTRAINT FK_ID_Driver FOREIGN KEY(ID_Driver) REFERENCES Employees(ID)
-)
+);
 
 CREATE TABLE Mechanics(
 	ID_Mechanic INT NOT NULL UNIQUE,
 	Specialization NVARCHAR(10) NOT NULL,
 	CONSTRAINT FK_ID_Mechanic FOREIGN KEY(ID_Mechanic) REFERENCES Employees(ID)
-)
+);
 
 CREATE TABLE Inspectors(
-	ID_inspector INT NOT NULL UNIQUE,
+	ID_Inspector INT NOT NULL UNIQUE,
 	ForeignLanguages NVARCHAR(10) NOT NULL,
 	CONSTRAINT FK_ID_Inspector FOREIGN KEY(ID_Inspector) REFERENCES Employees(ID)
-)
+);
+
+CREATE TABLE LineDriverMap(
+	ID INT IDENTITY(0, 1),
+	ID_Driver INT NOT NULL,
+	ID_Line INT NOT NULL,
+	CONSTRAINT PK_LineDriverMap PRIMARY KEY (ID),
+	CONSTRAINT FK_ID_Driver_LineDriverMap FOREIGN KEY (ID_Driver) REFERENCES Drivers(ID_Driver),
+	CONSTRAINT FK_ID_Line_LineDriverMap FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
+);
+
+CREATE TABLE Depots(
+	ID INT IDENTITY(0, 1),
+	Name NVARCHAR(256) NOT NULL,
+	Address NVARCHAR(256) NOT NULL,
+	Category NCHAR NOT NULL,
+	CONSTRAINT PK_Depots PRIMARY KEY (ID),
+	CONSTRAINT CK_Category_Depots CHECK (Category IN (N'A', N'T'))
+);
+
+CREATE TABLE VehicleDepotMap(
+	ID INT IDENTITY(0, 1),
+	ID_Vehicle INT NOT NULL,
+	ID_Depot INT NOT NULL,
+	CONSTRAINT PK_VehicleDepotMap PRIMARY KEY (ID),
+	CONSTRAINT FK_ID_Vehicle_VehicleDepotMap FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
+	CONSTRAINT FK_ID_Depot_VehicleDepotMap FOREIGN KEY (ID_Depot) REFERENCES Depots(ID)
+);
+
+CREATE TABLE MechanicDepotMap(
+	ID INT IDENTITY(0, 1),
+	ID_Mechanic INT NOT NULL,
+	ID_Depot INT NOT NULL,
+	CONSTRAINT PK_MechanicDepotMap PRIMARY KEY (ID),
+	CONSTRAINT FK_ID_Mechanic_MechanicDepotMap FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic),
+	CONSTRAINT FK_ID_Depot_MechanicDepotMap FOREIGN KEY (ID_Depot) REFERENCES Depots(ID)
+);
 
 INSERT INTO Stops VALUES
 (N'Kurczaki'),
@@ -131,7 +189,7 @@ INSERT INTO Stops VALUES
 (N'Kopernika'),
 (N'Inflancka'),
 (N'Manufaktura'),
-(N'Zgierska')
+(N'Zgierska');
 
 INSERT INTO Lines VALUES
 (N'6'),
@@ -140,16 +198,16 @@ INSERT INTO Lines VALUES
 (N'61'),
 (N'75A'),
 (N'75B'),
-(N'N2')
+(N'N2');
 
-INSERT INTO LineStopRelation VALUES
+INSERT INTO LineStopMap VALUES
 (0, 0, 0), (0, 2, 1), (0, 4, 2), (0, 5, 3), (0, 8, 4), (0, 6, 5),
 (1, 0, 0), (1, 1, 1), (1, 3, 2), (1, 8, 3), (1, 16, 4), (1, 18, 5), (1, 13, 6),
 (2, 19, 0), (2, 17, 1), (2, 7, 2), (2, 9, 3), (2, 16, 4), (2, 15, 5), (2, 3, 6), (2, 10, 7), (2, 12, 8),
 (3, 4, 0), (3, 14, 1), (3, 9, 2), (3, 10, 3),
 (4, 0, 0), (4, 2, 1), (4, 5, 2), (4, 17, 3), (4, 12, 4), (4, 4, 5), (4, 11, 6), (4, 15, 7),
 (5, 0, 0), (5, 2, 1), (5, 1, 2), (5, 17, 3), (5, 8, 4), (5, 4, 5), (5, 11, 6), (5, 15, 7),
-(6, 3, 0), (6, 4, 1), (6, 9, 2), (6, 11, 3)
+(6, 3, 0), (6, 4, 1), (6, 9, 2), (6, 11, 3);
 
 INSERT INTO Timetables VALUES
 (0, '08:00:00', 'A'), (0, '12:30:00', 'A'), (0, '21:27:00', 'A'), (0, '10:24:00', 'B'), (0, '15:59:00', 'B'), (0, '23:38:00', 'B'),
@@ -197,11 +255,11 @@ INSERT INTO Timetables VALUES
 (42, '08:13:00', 'A'), (42, '18:00:00', 'A'), (42, '15:04:00', 'B'), (42, '19:19:00', 'B'),
 (43, '08:18:00', 'A'), (43, '18:20:00', 'A'), (43, '14:56:00', 'B'), (43, '19:15:00', 'B'),
 (44, '08:25:00', 'A'), (44, '18:23:00', 'A'), (44, '14:48:00', 'B'), (44, '19:11:00', 'B'),
-(45, '08:40:00', 'A'), (45, '18:27:00', 'A'), (45, '14:43:00', 'B'), (45, '19:06:00', 'B')
+(45, '08:40:00', 'A'), (45, '18:27:00', 'A'), (45, '14:43:00', 'B'), (45, '19:06:00', 'B');
 
 INSERT INTO Types VALUES
 (N'PESA 122N', N'T', 63), (N'Konstal 805Na', N'T', 20), (N'Siemens NF6D', N'T', 72),
-(N'Solaris Urbino 18', N'A', 40),  (N'Mercedes Benz 628 Conecto LF', N'A', 29),  (N'Isuzu NovoCiti Life', N'A', 24)
+(N'Solaris Urbino 18', N'A', 40),  (N'Mercedes Benz 628 Conecto LF', N'A', 29),  (N'Isuzu NovoCiti Life', N'A', 24);
 
 INSERT INTO Vehicles VALUES
 (0, '2009-12-01', '2024-05-06'), (0, '2012-04-26', '2023-11-20'), (0, '2009-12-05', '2024-07-12'),
@@ -209,7 +267,7 @@ INSERT INTO Vehicles VALUES
 (2, '1992-07-29', '2023-07-15'), (2, '1992-08-07', '2024-01-08'),
 (3, '2023-06-03', '2024-05-08'), (3, '2023-05-27', '2024-04-11'),
 (4, '2010-09-16', '2024-12-22'), (4, '2010-03-22', '2024-02-05'),
-(5, '2018-11-18', '2023-01-07'), (5, '2018-03-23', '2024-04-01'), (5, '2018-04-19', '2023-05-24'), (5, '2018-05-11', '2024-07-09')
+(5, '2018-11-18', '2023-01-07'), (5, '2018-03-23', '2024-04-01'), (5, '2018-04-19', '2023-05-24'), (5, '2018-05-11', '2024-07-09');
 
 INSERT INTO Tickets (Price, DurationMinutes, Type) VALUES 
 (10.00, 60, N'reduced'),  
@@ -241,18 +299,37 @@ INSERT INTO Employees VALUES
 (N'Amelia', N'Królak', '90042336245', '1990-04-23', '2007-01-16', 7600),
 (N'Nikola', N'Skurzewska', '00270836226', '2000-07-08', '2019-03-25', 5980),
 (N'Ada', N'Dziedzina', '82050144622', '1982-05-01', '2014-10-31', 6700),
-(N'Alodia', N'Rutkowska', '93120723487', '1993-12-07', '2018-07-27', 7610)
+(N'Alodia', N'Rutkowska', '93120723487', '1993-12-07', '2018-07-27', 7610);
 
 INSERT INTO Drivers VALUES
-(1, N'AT'), (2, 'A'), (3, 'T'), (4, 'AT'), (10, 'AT')
+(1, N'AT'), (2, 'A'), (3, 'T'), (4, 'AT'), (10, 'AT');
 
 INSERT INTO Mechanics VALUES
-(0, N'A'), (8, N'T'), (9, N'A')
+(0, N'A'), (8, N'T'), (9, N'A');
 
 INSERT INTO Inspectors VALUES
-(5, N'EDR'), (6, N'E'), (7, N'ER'), (11, N'R')
+(5, N'EDR'), (6, N'E'), (7, N'ER'), (11, N'R');
 
-SELECT * FROM Employees
+INSERT INTO LineDriverMap VALUES
+(1, 0), (1, 1), (1, 4), (1, 6),
+(2, 3), (2, 5), (2, 6),
+(3, 1), (3, 0),
+(4, 5), (4, 0), (4, 2), (4, 3),
+(10, 1), (10, 2), (10, 4);
+
+INSERT INTO Depots VALUES
+(N'Limanowskiego', N'ul. Bolesława Limanowskiego 147', N'A'),
+(N'Nowe Sady', N'ul. Nowe Sady 15', N'A'),
+(N'Helenówek', N'ul. Zgierska 256', N'T'),
+(N'Chocianowice', N'ul. Pabianicka 215', N'T');
+
+INSERT INTO VehicleDepotMap VALUES
+(0, 2), (0, 3), (1, 2), (2, 2), (3, 3), (4, 3), (5, 2), (5, 3), (6, 3), (7, 2), (8, 2),
+(9, 0), (10, 0), (11, 0), (11, 1), (12, 0), (12, 1), (13, 1), (14, 1), (15, 1), (16, 1);
+
+INSERT INTO MechanicDepotMap VALUES
+(0, 0), (8,2), (8, 3), (9, 0), (9, 1);
+
 
 
 
