@@ -420,6 +420,60 @@ INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, De
 (4, 0, '2024-05-12', '2024-05-18', 'Suspension damage'),
 (5, 9, '2025-06-20', NULL, 'Cooling system leak');
 
+-- z jakiegos powodu cos sie psuje przy robieniu widokow i trzeba je dawac w tych osobnych okienkach
+
+-- CREATE VIEW brokenVehicles AS
+-- SELECT *
+-- FROM VehicleFailures
+-- WHERE RepairDate IS NULL;
+
+-- CREATE VIEW InspectorFinesByYear AS
+-- SELECT 
+--     i.ID_Inspector AS InspectorID,
+--     y.Year,
+--     COALESCE(SUM(c.NumberOfFines), 0) AS TotalFines
+-- FROM 
+--     (SELECT DISTINCT YEAR(Date) AS Year FROM ControlData) y
+-- CROSS JOIN 
+--     Inspectors i
+-- LEFT JOIN 
+--     ControlData c ON i.ID_Inspector = c.ID_Inspector AND YEAR(c.Date) = y.Year
+-- GROUP BY 
+--   i.ID_Inspector , y.Year;
+
+-- CREATE VIEW SalaryStatsByWorkerType AS
+-- SELECT 
+--     'Mechanics' AS WorkerType,
+--     AVG(e.Salary) AS AvgSalary,
+-- 	MIN(e.Salary) AS MinSalary,
+-- 	MAX(e.Salary) AS MaxSalary,
+-- 	SUM(e.Salary) AS TotalSalary
+-- FROM 
+--     Employees e
+-- JOIN 
+--     Mechanics m ON e.ID = m.ID_Mechanic
+-- UNION ALL
+-- SELECT 
+--     'Inspectors' AS WorkerType,
+-- 	AVG(e.Salary) AS AvgSalary,
+-- 	MIN(e.Salary) AS MinSalary,
+-- 	MAX(e.Salary) AS MaxSalary,
+-- 	SUM(e.Salary) AS TotalSalary
+-- FROM 
+--     Employees e
+-- JOIN 
+--     Inspectors i ON e.ID = i.ID_Inspector
+-- UNION ALL
+-- SELECT 
+--     'Drivers' AS WorkerType,
+--     AVG(e.Salary) AS AvgSalary,
+-- 	MIN(e.Salary) AS MinSalary,
+-- 	MAX(e.Salary) AS MaxSalary,
+-- 	SUM(e.Salary) AS TotalSalary
+-- FROM 
+--     Employees e
+-- JOIN 
+--     Drivers d ON e.ID = d.ID_Driver;
 
 
 
