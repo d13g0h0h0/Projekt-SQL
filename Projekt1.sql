@@ -431,7 +431,7 @@ INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, De
 -- SELECT 
 --     i.ID_Inspector AS InspectorID,
 --     y.Year,
---     COALESCE(SUM(c.NumberOfFines), 0) AS TotalFines
+--     ISNULL(SUM(c.NumberOfFines), 0) AS TotalFines
 -- FROM 
 --     (SELECT DISTINCT YEAR(Date) AS Year FROM ControlData) y
 -- CROSS JOIN 
@@ -474,9 +474,42 @@ INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, De
 --     Employees e
 -- JOIN 
 --     Drivers d ON e.ID = d.ID_Driver;
-
-
-
+-- CREATE VIEW TicketSalesSummary AS
+-- SELECT 
+--     t.ID AS ID_Ticket,
+--     y.Year,
+--     m.Month,
+--     ISNULL(SUM(ts.Quantity), 0) AS AmountSold,
+--     ISNULL(SUM(CAST(ts.Quantity AS Money) * t.Price), 0) AS TotalEarnings
+-- FROM 
+--     (SELECT DISTINCT YEAR(SaleDate) AS Year FROM TicketSales) y
+-- CROSS JOIN
+--    (SELECT DISTINCT MONTH(SaleDate) AS Month FROM TicketSales) m
+-- CROSS JOIN 
+--     Tickets t
+-- LEFT JOIN 
+--     TicketSales ts ON t.ID = ts.TicketID AND YEAR(ts.SaleDate) = y.Year AND MONTH(ts.SaleDate) = m.Month
+-- GROUP BY 
+--     t.ID, y.Year, m.Month;
+-- CREATE VIEW LineFinesSummary AS
+-- SELECT 
+--     l.ID AS ID_Line,
+--     l.Name AS LineName,
+--     ISNULL(SUM(c.NumberOfFines), 0) AS NumberOfFines
+-- FROM 
+--     Lines l
+-- LEFT JOIN 
+--     ControlData c ON l.ID = c.ID_Line
+-- GROUP BY 
+--     l.ID, l.Name;
+-- CREATE VIEW FinesSummaryByMonth AS
+-- SELECT 
+--     MONTH(c.Date) AS Month,
+--     ISNULL(SUM(c.NumberOfFines), 0) AS NumberOfFines
+-- FROM 
+--     ControlData c
+-- GROUP BY 
+--     MONTH(c.Date);
 
 
 
