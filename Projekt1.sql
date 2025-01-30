@@ -513,3 +513,31 @@ INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, De
 
 
 
+--funkcje
+-- CREATE FUNCTION CalculateInspectorBonus (@InspectorID INT)
+-- RETURNS MONEY
+-- AS
+-- BEGIN
+--     DECLARE @Bonus MONEY;
+--     DECLARE @Month INT;
+--     DECLARE @Year INT;
+
+--     IF MONTH(GETDATE()) = 1
+--     BEGIN
+--         SET @Month = 12;
+--         SET @Year = YEAR(GETDATE()) - 1;
+--     END
+--     ELSE
+--     BEGIN
+--         SET @Month = MONTH(GETDATE()) - 1;
+--         SET @Year = YEAR(GETDATE());
+--     END
+--     SELECT @Bonus = ISNULL(SUM(c.NumberOfFines) * 10, 0)
+--     FROM ControlData c
+--     WHERE c.ID_Inspector = @InspectorID
+--       AND MONTH(c.Date) = @Month
+--       AND YEAR(c.Date) = @Year;
+
+--     RETURN @Bonus;
+-- END;
+
