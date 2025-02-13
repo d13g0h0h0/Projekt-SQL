@@ -541,3 +541,137 @@ INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, De
 --     RETURN @Bonus;
 -- END;
 
+-- CREATE FUNCTION CalculateNextInspectionDate (@VehicleID INT)
+-- RETURNS DATE
+-- AS
+-- BEGIN
+--     DECLARE @ProductionDate DATE;
+--     DECLARE @LastInspectionDate DATE;
+--     DECLARE @FailureCount INT;
+--     DECLARE @YearsSinceProduction INT;
+--     DECLARE @MonthsToAdvance INT;
+--     DECLARE @NextInspectionDate DATE;
+
+--     SELECT 
+--         @ProductionDate = ProductionDate,
+--         @LastInspectionDate = LastInspectionDate
+--     FROM Vehicles
+--     WHERE ID = @VehicleID;
+
+--     SELECT 
+--         @FailureCount = COUNT(*)
+--     FROM VehicleFailures
+--     WHERE ID_Vehicle = @VehicleID;
+
+--     SET @YearsSinceProduction = DATEDIFF(YEAR, @ProductionDate, @LastInspectionDate);
+
+--     SET @MonthsToAdvance = (@YearsSinceProduction / 5) * 2 + @FailureCount;
+
+--     SET @NextInspectionDate = DATEADD(MONTH, -@MonthsToAdvance, DATEADD(YEAR, 5, @LastInspectionDate));
+
+--     RETURN @NextInspectionDate;
+-- END;
+
+-- CREATE VIEW VehicleNextInspection AS
+-- SELECT 
+--     v.ID AS VehicleID,
+--     v.LastInspectionDate,
+--     dbo.CalculateNextInspectionDate(v.ID) AS NextInspectionDate
+-- FROM 
+--     Vehicles v;
+
+-- CREATE VIEW EmployeeSalaryWithBonus AS
+-- SELECT 
+--     e.ID AS EmployeeID,
+--     e.Salary AS StandardSalary,
+--     ISNULL(dbo.CalculateInspectorBonus(e.ID), 0) AS Bonus,
+--     (e.Salary + ISNULL(dbo.CalculateInspectorBonus(e.ID), 0)) AS TotalSalaryBrutto,
+--     (e.Salary + ISNULL(dbo.CalculateInspectorBonus(e.ID), 0)) * 0.8 AS TotalSalaryNetto
+-- FROM 
+--     Employees e
+
+-- CREATE PROCEDURE GetLineStops
+--     @LineID INT
+-- AS
+-- BEGIN
+--     SELECT 
+--         s.ID AS StopID,
+--         s.Name AS StopName,
+--         lsm.StopOrder
+--     FROM 
+--         LineStopMap lsm
+--     JOIN 
+--         Stops s ON lsm.ID_Stop = s.ID
+--     WHERE 
+--         lsm.ID_Line = @LineID
+--     ORDER BY 
+--         lsm.StopOrder;
+-- END;
+
+-- CREATE PROCEDURE GetDirectLinesBetweenStops
+--     @StopName1 NVARCHAR(256),
+--     @StopName2 NVARCHAR(256)
+-- AS
+-- BEGIN
+--     SELECT DISTINCT
+--         lsm1.ID_Line AS LineID,
+--         l.Name AS LineName
+--     FROM 
+--         LineStopMap lsm1
+--     JOIN 
+--         Stops s1 ON lsm1.ID_Stop = s1.ID
+--     JOIN 
+--         LineStopMap lsm2 ON lsm1.ID_Line = lsm2.ID_Line
+--     JOIN 
+--         Stops s2 ON lsm2.ID_Stop = s2.ID
+--     JOIN
+--         Lines l ON lsm1.ID_Line = l.ID
+--     WHERE 
+--         s1.Name = @StopName1
+--         AND s2.Name = @StopName2;
+-- END;
+
+-- CREATE PROCEDURE GetTimetableForStop
+--     @StopName NVARCHAR(256)
+-- AS
+-- BEGIN
+--     SELECT 
+--         l.Name AS LineName,
+--         t.Time AS DepartureTime,
+--         t.Direction
+--     FROM 
+--         Stops s
+--     JOIN 
+--         LineStopMap lsm ON s.ID = lsm.ID_Stop
+--     JOIN 
+--         Timetables t ON lsm.ID = t.ID_LineStopRelation
+--     JOIN 
+--         Lines l ON lsm.ID_Line = l.ID
+--     WHERE 
+--         s.Name = @StopName
+--     ORDER BY 
+--         t.Time;
+-- END;
+
+-- CREATE PROCEDURE GetTicketSalesReport
+--     @LineID INT,
+--     @StartDate DATE,
+--     @EndDate DATE
+-- AS
+-- BEGIN
+--     SELECT 
+--         ts.SaleDate,
+--         t.Type AS TicketType,
+--         ts.Quantity,
+--         t.Price,
+--         (ts.Quantity * t.Price) AS TotalRevenue
+--     FROM 
+--         TicketSales ts
+--     JOIN 
+--         Tickets t ON ts.TicketID = t.ID
+--     WHERE 
+--         ts.LineID = @LineID
+--         AND ts.SaleDate BETWEEN @StartDate AND @EndDate
+--     ORDER BY 
+--         ts.SaleDate;
+-- END;
