@@ -1,3 +1,7 @@
+CREATE DATABASE MPK_Baza
+GO
+USE MPK_Baza
+
 IF OBJECT_ID('GetTicketSalesReport', 'P') IS NOT NULL
     DROP PROCEDURE GetTicketSalesReport;
 IF OBJECT_ID('GetTimetableForStop', 'P') IS NOT NULL
@@ -876,3 +880,6 @@ AS
 		AND TS.SaleDate BETWEEN @StartDate AND @EndDate
 	ORDER BY
 		TS.SaleDate;
+
+USE master
+DROP DATABASE MPK_Baza
