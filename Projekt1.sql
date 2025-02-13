@@ -1,39 +1,80 @@
-IF OBJECT_ID('Timetables', 'U') IS NOT NULL
-	DROP TABLE Timetables;
-IF OBJECT_ID('TicketSales', 'U') IS NOT NULL
-	DROP TABLE TicketSales;
-IF OBJECT_ID('LineStopMap', 'U') IS NOT NULL
-	DROP TABLE LineStopMap;
-IF OBJECT_ID('LineDriverMap', 'U') IS NOT NULL
-	DROP TABLE LineDriverMap;
-IF OBJECT_ID('Stops', 'U') IS NOT NULL
-	DROP TABLE Stops;
-IF OBJECT_ID('Lines', 'U') IS NOT NULL
-	DROP TABLE Lines;
+IF OBJECT_ID('GetTicketSalesReport', 'P') IS NOT NULL
+    DROP PROCEDURE GetTicketSalesReport;
+IF OBJECT_ID('GetTimetableForStop', 'P') IS NOT NULL
+    DROP PROCEDURE GetTimetableForStop;
+IF OBJECT_ID('GetDirectLinesBetweenStops', 'P') IS NOT NULL
+    DROP PROCEDURE GetDirectLinesBetweenStops;
+IF OBJECT_ID('GetLineStops', 'P') IS NOT NULL
+    DROP PROCEDURE GetLineStops;
+IF OBJECT_ID('EmployeeSalaryWithBonus', 'V') IS NOT NULL
+    DROP VIEW EmployeeSalaryWithBonus;
+IF OBJECT_ID('VehicleNextInspection', 'V') IS NOT NULL
+    DROP VIEW VehicleNextInspection;
+IF OBJECT_ID('CalculateNextInspectionDate', 'FN') IS NOT NULL
+    DROP FUNCTION CalculateNextInspectionDate;
+IF OBJECT_ID('CalculateInspectorBonus', 'FN') IS NOT NULL
+    DROP FUNCTION CalculateInspectorBonus;
+IF OBJECT_ID('FinesSummaryByMonth', 'V') IS NOT NULL
+    DROP VIEW FinesSummaryByMonth;
+IF OBJECT_ID('LineFinesSummary', 'V') IS NOT NULL
+    DROP VIEW LineFinesSummary;
+IF OBJECT_ID('TicketSalesSummary', 'V') IS NOT NULL
+    DROP VIEW TicketSalesSummary;
+IF OBJECT_ID('SalaryStatsByWorkerType', 'V') IS NOT NULL
+    DROP VIEW SalaryStatsByWorkerType;
+IF OBJECT_ID('InspectorFinesByYear', 'V') IS NOT NULL
+    DROP VIEW InspectorFinesByYear;
+IF OBJECT_ID('BrokenVehicles', 'V') IS NOT NULL
+    DROP VIEW BrokenVehicles;
+IF OBJECT_ID('AddEmployee', 'P') IS NOT NULL
+    DROP PROCEDURE AddEmployee;
+IF OBJECT_ID('AddTicketSale', 'TR') IS NOT NULL
+    DROP TRIGGER AddTicketSale;
+IF OBJECT_ID('AddFailure', 'TR') IS NOT NULL
+    DROP TRIGGER AddFailure;
+IF OBJECT_ID('DeleteInspector', 'TR') IS NOT NULL
+    DROP TRIGGER DeleteInspector;
+IF OBJECT_ID('DeleteMechanic', 'TR') IS NOT NULL
+    DROP TRIGGER DeleteMechanic;
+IF OBJECT_ID('DeleteDriver', 'TR') IS NOT NULL
+    DROP TRIGGER DeleteDriver;
+IF OBJECT_ID('VehicleFailures', 'U') IS NOT NULL
+    DROP TABLE VehicleFailures;
+IF OBJECT_ID('ControlData', 'U') IS NOT NULL
+	DROP TABLE ControlData;
+IF OBJECT_ID('MechanicDepotMap', 'U') IS NOT NULL
+	DROP TABLE MechanicDepotMap;
 IF OBJECT_ID('VehicleDepotMap', 'U') IS NOT NULL
 	DROP TABLE VehicleDepotMap;
+IF OBJECT_ID('Depots', 'U') IS NOT NULL
+	DROP TABLE Depots;
+IF OBJECT_ID('LineDriverMap', 'U') IS NOT NULL
+	DROP TABLE LineDriverMap;
+IF OBJECT_ID('Inspectors', 'U') IS NOT NULL
+	DROP TABLE Inspectors;
+IF OBJECT_ID('Mechanics', 'U') IS NOT NULL
+	DROP TABLE Mechanics;
+IF OBJECT_ID('Drivers', 'U') IS NOT NULL
+	DROP TABLE Drivers;
+IF OBJECT_ID('TicketSales', 'U') IS NOT NULL
+	DROP TABLE TicketSales;
+IF OBJECT_ID('Tickets', 'U') IS NOT NULL
+	DROP TABLE Tickets;
+IF OBJECT_ID('Employees', 'U') IS NOT NULL
+	DROP TABLE Employees;
 IF OBJECT_ID('Vehicles', 'U') IS NOT NULL
 	DROP TABLE Vehicles;
 IF OBJECT_ID('Types', 'U') IS NOT NULL
 	DROP TABLE Types;
-IF OBJECT_ID('Tickets', 'U') IS NOT NULL
-	DROP TABLE Tickets;
-IF OBJECT_ID('Drivers', 'U') IS NOT NULL
-	DROP TABLE Drivers;
-IF OBJECT_ID('MechanicDepotMap', 'U') IS NOT NULL
-	DROP TABLE MechanicDepotMap;
-IF OBJECT_ID('Mechanics', 'U') IS NOT NULL
-	DROP TABLE Mechanics;
-IF OBJECT_ID('Inspectors', 'U') IS NOT NULL
-	DROP TABLE Inspectors;
-IF OBJECT_ID('Employees', 'U') IS NOT NULL
-	DROP TABLE Employees;
-IF OBJECT_ID('Depots', 'U') IS NOT NULL
-	DROP TABLE Depots;
-IF OBJECT_ID('ControlData', 'U') IS NOT NULL
-	DROP TABLE ControlData;
-IF OBJECT_ID('VehicleFailures', 'U') IS NOT NULL
-    DROP TABLE VehicleFailures;
+IF OBJECT_ID('Timetables', 'U') IS NOT NULL
+	DROP TABLE Timetables;
+IF OBJECT_ID('LineStopMap', 'U') IS NOT NULL
+	DROP TABLE LineStopMap;
+IF OBJECT_ID('Lines', 'U') IS NOT NULL
+	DROP TABLE Lines;
+IF OBJECT_ID('Stops', 'U') IS NOT NULL
+	DROP TABLE Stops;
+
 
 CREATE TABLE Stops(
 	ID INT IDENTITY(0, 1),
@@ -60,11 +101,11 @@ CREATE TABLE LineStopMap(
 
 CREATE TABLE Timetables(
 	ID INT IDENTITY(0, 1),
-	ID_LineStopRelation INT NOT NULL,
+	ID_LineStopMap INT NOT NULL,
 	Time TIME(0) NOT NULL,
 	Direction NCHAR NOT NULL,
 	CONSTRAINT PK_Timetables PRIMARY KEY(ID),
-	CONSTRAINT FK_ID_LineStopRelation FOREIGN KEY(ID_LineStopRelation) REFERENCES LineStopMap(ID),
+	CONSTRAINT FK_ID_LineStopMap FOREIGN KEY(ID_LineStopMap) REFERENCES LineStopMap(ID),
 	CONSTRAINT CHK_Direction_AB CHECK (Direction IN (N'A', N'B'))
 );
 
@@ -103,6 +144,7 @@ CREATE TABLE Tickets (
     Price MONEY NOT NULL,
     DurationMinutes INT NOT NULL,
     Type NVARCHAR(10) NOT NULL,
+	TotalNumber INT NOT NULL,
 	CONSTRAINT PK_Tickets PRIMARY KEY (ID),
     CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
 );
@@ -122,19 +164,19 @@ CREATE TABLE TicketSales (
 CREATE TABLE Drivers(
 	ID_Driver INT NOT NULL UNIQUE,
 	DrivingLicense NVARCHAR(10) NOT NULL,
-	CONSTRAINT FK_ID_Driver FOREIGN KEY(ID_Driver) REFERENCES Employees(ID)
+	CONSTRAINT FK_ID_Driver FOREIGN KEY(ID_Driver) REFERENCES Employees(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE Mechanics(
 	ID_Mechanic INT NOT NULL UNIQUE,
-	Specialization NVARCHAR(10) NOT NULL,
-	CONSTRAINT FK_ID_Mechanic FOREIGN KEY(ID_Mechanic) REFERENCES Employees(ID)
+	Specialization NCHAR NOT NULL,
+	CONSTRAINT FK_ID_Mechanic FOREIGN KEY(ID_Mechanic) REFERENCES Employees(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE Inspectors(
 	ID_Inspector INT NOT NULL UNIQUE,
 	ForeignLanguages NVARCHAR(10) NOT NULL,
-	CONSTRAINT FK_ID_Inspector FOREIGN KEY(ID_Inspector) REFERENCES Employees(ID)
+	CONSTRAINT FK_ID_Inspector FOREIGN KEY(ID_Inspector) REFERENCES Employees(ID) ON DELETE CASCADE
 );
 
 CREATE TABLE LineDriverMap(
@@ -142,7 +184,7 @@ CREATE TABLE LineDriverMap(
 	ID_Driver INT NOT NULL,
 	ID_Line INT NOT NULL,
 	CONSTRAINT PK_LineDriverMap PRIMARY KEY (ID),
-	CONSTRAINT FK_ID_Driver_LineDriverMap FOREIGN KEY (ID_Driver) REFERENCES Drivers(ID_Driver),
+	CONSTRAINT FK_ID_Driver_LineDriverMap FOREIGN KEY (ID_Driver) REFERENCES Drivers(ID_Driver) ON DELETE CASCADE,
 	CONSTRAINT FK_ID_Line_LineDriverMap FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
 );
 
@@ -169,29 +211,29 @@ CREATE TABLE MechanicDepotMap(
 	ID_Mechanic INT NOT NULL,
 	ID_Depot INT NOT NULL,
 	CONSTRAINT PK_MechanicDepotMap PRIMARY KEY (ID),
-	CONSTRAINT FK_ID_Mechanic_MechanicDepotMap FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic),
+	CONSTRAINT FK_ID_Mechanic_MechanicDepotMap FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic) ON DELETE CASCADE,
 	CONSTRAINT FK_ID_Depot_MechanicDepotMap FOREIGN KEY (ID_Depot) REFERENCES Depots(ID)
 );
 
 CREATE TABLE ControlData (
     ID INT IDENTITY(0, 1) PRIMARY KEY,
-    ID_Inspector INT NOT NULL,
+    ID_Inspector INT NULL,
     ID_Line INT NOT NULL,
     Date DATE NOT NULL,
     NumberOfFines INT NOT NULL,
-    CONSTRAINT FK_ID_Inspector_ControlData FOREIGN KEY (ID_Inspector) REFERENCES Inspectors(ID_Inspector),
+    CONSTRAINT FK_ID_Inspector_ControlData FOREIGN KEY (ID_Inspector) REFERENCES Inspectors(ID_Inspector) ON DELETE SET NULL,
     CONSTRAINT FK_ID_Line_ControlData FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
 );
 
 CREATE TABLE VehicleFailures (
     ID INT IDENTITY(0, 1) PRIMARY KEY,
     ID_Vehicle INT NOT NULL,
-    ID_Mechanic INT NOT NULL,
+	ID_Mechanic INT DEFAULT NULL,
     ReportDate DATE NOT NULL,
     RepairDate DATE DEFAULT NULL,
     Description NVARCHAR(MAX),
-    CONSTRAINT FK_ID_Vehicle FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
-    CONSTRAINT FK_ID_MechanicVF FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic)
+    CONSTRAINT FK_ID_Vehicle_VehicleFailures FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
+	CONSTRAINT FK_ID_Repairing_Mechanic_VehicleFailures FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic) ON DELETE SET NULL
 );
 
 INSERT INTO Stops VALUES
@@ -294,13 +336,13 @@ INSERT INTO Vehicles VALUES
 (4, '2010-09-16', '2024-12-22'), (4, '2010-03-22', '2024-02-05'),
 (5, '2018-11-18', '2023-01-07'), (5, '2018-03-23', '2024-04-01'), (5, '2018-04-19', '2023-05-24'), (5, '2018-05-11', '2024-07-09');
 
-INSERT INTO Tickets (Price, DurationMinutes, Type) VALUES 
-(10.00, 60, N'reduced'),  
-(15.00, 60, N'standard'), 
-(20.00, 120, N'reduced'), 
-(30.00, 120, N'standard'),
-(5.00, 30, N'reduced'),   
-(7.50, 30, N'standard');
+INSERT INTO Tickets (Price, DurationMinutes, Type, TotalNumber) VALUES 
+(10.00, 60, N'reduced', 4568),  
+(15.00, 60, N'standard', 21341), 
+(20.00, 120, N'reduced', 23422), 
+(30.00, 120, N'standard', 1999),
+(5.00, 30, N'reduced', 2022),   
+(7.50, 30, N'standard', 470);
 
 INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
 (2, 3, 1, '2025-01-01'), 
@@ -310,51 +352,21 @@ INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate) VALUES
 (3, 1, 4, '2025-02-01'),  
 (1, 3, 2, '2025-02-03'), 
 (0, 2, 6, '2025-02-05'), 
-(1, 1, 2, '2025-02-05'),
-(3, 2, 5, '2024-01-15'), 
-(1, 1, 3, '2024-02-20'), 
-(4, 3, 2, '2024-03-25'), 
-(2, 2, 6, '2024-04-10'), 
-(0, 1, 1, '2024-05-05'), 
-(5, 3, 4, '2024-06-15'), 
-(2, 2, 0, '2024-07-20'), 
-(3, 1, 3, '2024-08-25'), 
-(1, 2, 5, '2024-09-30'), 
-(4, 3, 6, '2024-10-15'), 
-(0, 1, 2, '2024-11-20'), 
-(5, 2, 1, '2024-12-25'), 
-(2, 3, 4, '2025-01-10'), 
-(3, 1, 0, '2025-02-15'), 
-(1, 2, 3, '2025-03-20'), 
-(4, 3, 5, '2025-04-25'), 
-(0, 1, 6, '2025-05-10'), 
-(5, 2, 2, '2025-06-15'), 
-(2, 3, 1, '2025-07-20'), 
-(3, 1, 4, '2025-08-25'), 
-(1, 2, 0, '2025-09-30'), 
-(4, 3, 3, '2025-10-15'), 
-(0, 1, 5, '2025-11-20'), 
-(5, 2, 6, '2025-12-25'), 
-(2, 3, 2, '2024-01-10'), 
-(3, 1, 1, '2024-02-15'), 
-(1, 2, 4, '2024-03-20'), 
-(4, 3, 0, '2024-04-25'), 
-(0, 1, 3, '2024-05-10'), 
-(5, 2, 5, '2024-06-15');
+(1, 1, 2, '2025-02-05');
 
 INSERT INTO Employees VALUES
-(N'Barbara', N'Ostaszewska', '89070785765', '1989-07-07', '2014-06-07', 8700),
-(N'Jan', N'Kowalski', '91041617614', '1991-04-16', '2015-02-09', 5600),
-(N'Anastazja', N'Ćwiklińska', '76061516424', '1976-06-15', '1999-01-17', 6300),
-(N'Janina', N'Stefańska', '76061714723', '1976-06-17', '1996-09-30', 7340),
-(N'Stefan', N'Nowak', '03222855614', '2003-02-28', '2022-12-04', 6390),
-(N'Mateusz', N'Rachwał', '82052342974', '1982-05-23', '2002-05-07', 7800),
-(N'Borys', N'Wilczyński', '86071815158', '1986-07-18', '2011-11-11', 5440),
-(N'Adam', N'Glapiński', '02260146452', '2002-06-01', '2024-06-12', 5890),
-(N'Amelia', N'Królak', '90042336245', '1990-04-23', '2007-01-16', 7600),
-(N'Nikola', N'Skurzewska', '00270836226', '2000-07-08', '2019-03-25', 5980),
-(N'Ada', N'Dziedzina', '82050144622', '1982-05-01', '2014-10-31', 6700),
-(N'Alodia', N'Rutkowska', '93120723487', '1993-12-07', '2018-07-27', 7610);
+(N'Barbara', N'Ostaszewska', N'89070785765', '1989-07-07', '2014-06-07', 8700),
+(N'Jan', N'Kowalski', N'91041617614', '1991-04-16', '2015-02-09', 5600),
+(N'Anastazja', N'Ćwiklińska', N'76061516424', '1976-06-15', '1999-01-17', 6300),
+(N'Janina', N'Stefańska', N'76061714723', '1976-06-17', '1996-09-30', 7340),
+(N'Stefan', N'Nowak', N'03222855614', '2003-02-28', '2022-12-04', 6390),
+(N'Mateusz', N'Rachwał', N'82052342974', '1982-05-23', '2002-05-07', 7800),
+(N'Borys', N'Wilczyński', N'86071815158', '1986-07-18', '2011-11-11', 5440),
+(N'Adam', N'Glapiński', N'02260146452', '2002-06-01', '2024-06-12', 5890),
+(N'Amelia', N'Królak', N'90042336245', '1990-04-23', '2007-01-16', 7600),
+(N'Nikola', N'Skurzewska', N'00270836226', '2000-07-08', '2019-03-25', 5980),
+(N'Ada', N'Dziedzina', N'82050144622', '1982-05-01', '2014-10-31', 6700),
+(N'Alodia', N'Rutkowska', N'93120723487', '1993-12-07', '2018-07-27', 7610);
 
 INSERT INTO Drivers VALUES
 (1, N'AT'), (2, 'A'), (3, 'T'), (4, 'AT'), (10, 'AT');
@@ -413,265 +425,454 @@ INSERT INTO ControlData (ID_Inspector, ID_Line, Date, NumberOfFines) VALUES
 (7, 1, '2024-01-10', 0);
 
 INSERT INTO VehicleFailures (ID_Vehicle, ID_Mechanic, ReportDate, RepairDate, Description) VALUES
-(0, 8, '2024-01-15', '2024-01-20', 'Engine malfunction'),
-(1, 8, '2024-02-10', '2024-02-15', 'Brake system failure'),
-(2, 8, '2024-03-05', '2024-03-10', 'Transmission issue'),
-(3, 9, '2024-04-01', '2024-04-07', 'Electrical problem'),
-(4, 0, '2024-05-12', '2024-05-18', 'Suspension damage'),
-(5, 9, '2025-06-20', NULL, 'Cooling system leak');
+(0, 8, '2024-01-15', '2024-01-20', N'Engine malfunction'),
+(1, 8, '2024-02-10', '2024-02-15', N'Brake system failure'),
+(2, 8, '2024-03-05', '2024-03-10', N'Transmission issue'),
+(3, 9, '2024-04-01', '2024-04-07', N'Electrical problem'),
+(4, 0, '2024-05-12', '2024-05-18', N'Suspension damage'),
+(5, 9, '2025-06-20', NULL, N'Cooling system leak');
 
--- z jakiegos powodu cos sie psuje przy robieniu widokow i trzeba je dawac w tych osobnych okienkach
+-- dodaj nowego pracownika
+-- modyfikuj pracownika (jeśli jest to zmodyfikuj, a jak nie ma to wołasz o dodanie)
+-- usuń (procedura + wyzwalacz)
 
--- CREATE VIEW brokenVehicles AS
--- SELECT *
--- FROM VehicleFailures
--- WHERE RepairDate IS NULL;
+GO
 
--- CREATE VIEW InspectorFinesByYear AS
--- SELECT 
---     i.ID_Inspector AS InspectorID,
---     y.Year,
---     ISNULL(SUM(c.NumberOfFines), 0) AS TotalFines
--- FROM 
---     (SELECT DISTINCT YEAR(Date) AS Year FROM ControlData) y
--- CROSS JOIN 
---     Inspectors i
--- LEFT JOIN 
---     ControlData c ON i.ID_Inspector = c.ID_Inspector AND YEAR(c.Date) = y.Year
--- GROUP BY 
---   i.ID_Inspector , y.Year;
+CREATE TRIGGER DeleteDriver ON Drivers
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Driver FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
 
--- CREATE VIEW SalaryStatsByWorkerType AS
--- SELECT 
---     'Mechanics' AS WorkerType,
---     AVG(e.Salary) AS AvgSalary,
--- 	MIN(e.Salary) AS MinSalary,
--- 	MAX(e.Salary) AS MaxSalary,
--- 	SUM(e.Salary) AS TotalSalary
--- FROM 
---     Employees e
--- JOIN 
---     Mechanics m ON e.ID = m.ID_Mechanic
--- UNION ALL
--- SELECT 
---     'Inspectors' AS WorkerType,
--- 	AVG(e.Salary) AS AvgSalary,
--- 	MIN(e.Salary) AS MinSalary,
--- 	MAX(e.Salary) AS MaxSalary,
--- 	SUM(e.Salary) AS TotalSalary
--- FROM 
---     Employees e
--- JOIN 
---     Inspectors i ON e.ID = i.ID_Inspector
--- UNION ALL
--- SELECT 
---     'Drivers' AS WorkerType,
---     AVG(e.Salary) AS AvgSalary,
--- 	MIN(e.Salary) AS MinSalary,
--- 	MAX(e.Salary) AS MaxSalary,
--- 	SUM(e.Salary) AS TotalSalary
--- FROM 
---     Employees e
--- JOIN 
---     Drivers d ON e.ID = d.ID_Driver;
--- CREATE VIEW TicketSalesSummary AS
--- SELECT 
---     t.ID AS ID_Ticket,
---     y.Year,
---     m.Month,
---     ISNULL(SUM(ts.Quantity), 0) AS AmountSold,
---     ISNULL(SUM(CAST(ts.Quantity AS Money) * t.Price), 0) AS TotalEarnings
--- FROM 
---     (SELECT DISTINCT YEAR(SaleDate) AS Year FROM TicketSales) y
--- CROSS JOIN
---    (SELECT DISTINCT MONTH(SaleDate) AS Month FROM TicketSales) m
--- CROSS JOIN 
---     Tickets t
--- LEFT JOIN 
---     TicketSales ts ON t.ID = ts.TicketID AND YEAR(ts.SaleDate) = y.Year AND MONTH(ts.SaleDate) = m.Month
--- GROUP BY 
---     t.ID, y.Year, m.Month;
--- CREATE VIEW LineFinesSummary AS
--- SELECT 
---     l.ID AS ID_Line,
---     l.Name AS LineName,
---     ISNULL(SUM(c.NumberOfFines), 0) AS NumberOfFines
--- FROM 
---     Lines l
--- LEFT JOIN 
---     ControlData c ON l.ID = c.ID_Line
--- GROUP BY 
---     l.ID, l.Name;
--- CREATE VIEW FinesSummaryByMonth AS
--- SELECT 
---     MONTH(c.Date) AS Month,
---     ISNULL(SUM(c.NumberOfFines), 0) AS NumberOfFines
--- FROM 
---     ControlData c
--- GROUP BY 
---     MONTH(c.Date);
+GO
 
+CREATE TRIGGER DeleteMechanic ON Mechanics
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Mechanic FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
 
+GO
 
---funkcje
--- CREATE FUNCTION CalculateInspectorBonus (@InspectorID INT)
--- RETURNS MONEY
--- AS
--- BEGIN
---     DECLARE @Bonus MONEY;
---     DECLARE @Month INT;
---     DECLARE @Year INT;
+CREATE TRIGGER DeleteInspector ON Inspectors
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Inspector FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
 
---     IF MONTH(GETDATE()) = 1
---     BEGIN
---         SET @Month = 12;
---         SET @Year = YEAR(GETDATE()) - 1;
---     END
---     ELSE
---     BEGIN
---         SET @Month = MONTH(GETDATE()) - 1;
---         SET @Year = YEAR(GETDATE());
---     END
---     SELECT @Bonus = ISNULL(SUM(c.NumberOfFines) * 10, 0)
---     FROM ControlData c
---     WHERE c.ID_Inspector = @InspectorID
---       AND MONTH(c.Date) = @Month
---       AND YEAR(c.Date) = @Year;
+GO
 
---     RETURN @Bonus;
--- END;
+CREATE TRIGGER AddFailure ON VehicleFailures
+AFTER INSERT
+AS
+	DECLARE Failure_Cursor CURSOR FOR
+	SELECT ID, ID_Vehicle, ID_Mechanic FROM DELETED;
+	OPEN Failure_Cursor
+	DECLARE @ID_Row INT
+	DECLARE @ID_Vehicle INT
+	DECLARE @ID_Mechanic INT
+	FETCH Failure_Cursor INTO @ID_Row, @ID_Vehicle, @ID_Mechanic
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF @ID_Mechanic IS NULL
+		BEGIN
+			DECLARE @Vehicle_Depot INT
+			SELECT @Vehicle_Depot = VDM.ID_Depot
+			FROM Vehicles V JOIN VehicleDepotMap VDM ON V.ID = VDM.ID_Vehicle
+			WHERE V.ID = @ID_Vehicle
 
--- CREATE FUNCTION CalculateNextInspectionDate (@VehicleID INT)
--- RETURNS DATE
--- AS
--- BEGIN
---     DECLARE @ProductionDate DATE;
---     DECLARE @LastInspectionDate DATE;
---     DECLARE @FailureCount INT;
---     DECLARE @YearsSinceProduction INT;
---     DECLARE @MonthsToAdvance INT;
---     DECLARE @NextInspectionDate DATE;
+			IF EXISTS (
+				SELECT M.ID_Mechanic
+				FROM Mechanics M JOIN MechanicDepotMap MDM ON M.ID_Mechanic = MDM.ID_Mechanic
+				WHERE MDM.ID_Depot = @Vehicle_Depot AND M.ID_Mechanic NOT IN 
+				(SELECT VF.ID_Mechanic FROM VehicleFailures VF WHERE VF.RepairDate IS NULL)
+			)
+			BEGIN
+				SET @ID_Mechanic = (
+					SELECT TOP 1 M.ID_Mechanic
+					FROM Mechanics M JOIN MechanicDepotMap MDM ON M.ID_Mechanic = MDM.ID_Mechanic
+					WHERE MDM.ID_Depot = @Vehicle_Depot AND M.ID_Mechanic NOT IN 
+					(SELECT VF.ID_Mechanic FROM VehicleFailures VF WHERE VF.RepairDate IS NULL AND VF.ID_Mechanic IS NOT NULL)
+				)
+				UPDATE VehicleFailures
+				SET ID_Mechanic = @ID_Mechanic
+				WHERE ID = @ID_Row
+				PRINT(N'Udało się znaleźć wolnego mechanika, dodano go do zgłoszenia.')
+			END
+			ELSE
+			BEGIN
+				PRINT(N'Nie udało się znaleźć wolnego mechanika.')
+			END
+		END
+		FETCH Failure_Cursor INTO @ID_Vehicle, @ID_Mechanic
+	END
+	CLOSE Failure_Cursor
+	DEALLOCATE Failure_Cursor
 
---     SELECT 
---         @ProductionDate = ProductionDate,
---         @LastInspectionDate = LastInspectionDate
---     FROM Vehicles
---     WHERE ID = @VehicleID;
+GO
 
---     SELECT 
---         @FailureCount = COUNT(*)
---     FROM VehicleFailures
---     WHERE ID_Vehicle = @VehicleID;
+CREATE TRIGGER AddTicketSale ON TicketSales
+INSTEAD OF INSERT
+AS
+	DECLARE Ticket_Cursor CURSOR FOR
+	SELECT TicketID, Quantity FROM INSERTED;
+	OPEN Ticket_Cursor
+	DECLARE @TicketID INT
+	DECLARE @Quantity INT
+	DECLARE @TooFewTickets BIT
+	SET @TooFewTickets = 0
+	FETCH Ticket_Cursor INTO @TicketID, @Quantity
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF (SELECT T.TotalNumber FROM Tickets T WHERE T.ID = @TicketID) < @Quantity
+		BEGIN SELECT * FROM Tickets
+			SET @TooFewTickets = 1
+		END
+		FETCH Ticket_Cursor INTO @TicketID, @Quantity
+	END
+	CLOSE Ticket_Cursor
+	DEALLOCATE Ticket_Cursor
+	IF @TooFewTickets = 0
+	BEGIN
+		INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate)
+		SELECT I.TicketID, I.Quantity, I.LineID, I.SaleDate FROM INSERTED I;
+		PRINT(N'Transakcja się powiodła.')
+	END
+	ELSE
+	BEGIN
+		PRINT(N'Transakcja się nie powiodła, brakuje biletów.')
+	END
 
---     SET @YearsSinceProduction = DATEDIFF(YEAR, @ProductionDate, @LastInspectionDate);
+GO
 
---     SET @MonthsToAdvance = (@YearsSinceProduction / 5) * 2 + @FailureCount;
+CREATE PROCEDURE AddEmployee
+(
+	@FirstName NVARCHAR(128),
+	@LastName NVARCHAR(128),
+	@PESEL NVARCHAR(11),
+	@DateOfBirth DATE,
+	@DateOfEmployment DATE,
+	@Salary MONEY,
+	@Type NVARCHAR(20),
+	@Details NVARCHAR(20)
+)
+	AS
+	IF EXISTS(SELECT E.PESEL FROM Employees E WHERE PESEL = @PESEL)
+	BEGIN
+		PRINT(N'Ten numer PESEL jest już zajęty, dodanie nowego pracownika nie powiodło się.')
+	END
+	ELSE
+	BEGIN
+		IF @Type NOT IN(N'Kierowca', N'Mechanik', N'Kontroler')
+		BEGIN
+			PRINT(N'Podano niepoprawną kategorię pracownika, dodanie nowego pracownika nie powiodło się.')
+		END
+		ELSE
+		BEGIN
+			INSERT INTO Employees VALUES (@FirstName, @LastName, @PESEL, @DateOfBirth, @DateOfEmployment, @Salary)
+			DECLARE @ID INT = (SELECT E.ID FROM Employees E WHERE PESEL = @PESEL);
+			IF @Type = N'Kierowca' INSERT INTO Drivers VALUES (@ID, @Details)
+			IF @Type = N'Mechanik' INSERT INTO Mechanics VALUES (@ID, @Details)
+			IF @Type = N'Kontroler' INSERT INTO Inspectors VALUES (@ID, @Details)
+		END
+	END;
 
---     SET @NextInspectionDate = DATEADD(MONTH, -@MonthsToAdvance, DATEADD(YEAR, 5, @LastInspectionDate));
+GO
 
---     RETURN @NextInspectionDate;
--- END;
+CREATE VIEW BrokenVehicles AS
+	SELECT *
+	FROM VehicleFailures
+	WHERE RepairDate IS NULL;
 
--- CREATE VIEW VehicleNextInspection AS
--- SELECT 
---     v.ID AS VehicleID,
---     v.LastInspectionDate,
---     dbo.CalculateNextInspectionDate(v.ID) AS NextInspectionDate
--- FROM 
---     Vehicles v;
+GO
 
--- CREATE VIEW EmployeeSalaryWithBonus AS
--- SELECT 
---     e.ID AS EmployeeID,
---     e.Salary AS StandardSalary,
---     ISNULL(dbo.CalculateInspectorBonus(e.ID), 0) AS Bonus,
---     (e.Salary + ISNULL(dbo.CalculateInspectorBonus(e.ID), 0)) AS TotalSalaryBrutto,
---     (e.Salary + ISNULL(dbo.CalculateInspectorBonus(e.ID), 0)) * 0.8 AS TotalSalaryNetto
--- FROM 
---     Employees e
+CREATE VIEW InspectorFinesByYear AS
+	SELECT
+		I.ID_Inspector AS InspectorID,
+		Y.Year,
+		ISNULL(SUM(c.NumberOfFines), 0) AS TotalFines
+	FROM
+		(SELECT DISTINCT YEAR(Date) AS Year FROM ControlData) Y
+	CROSS JOIN
+		Inspectors	I
+	LEFT JOIN
+		ControlData C ON I.ID_Inspector = C.ID_Inspector AND YEAR(C.Date) = Y.Year
+	GROUP BY
+		I.ID_Inspector , Y.Year;
 
--- CREATE PROCEDURE GetLineStops
---     @LineID INT
--- AS
--- BEGIN
---     SELECT 
---         s.ID AS StopID,
---         s.Name AS StopName,
---         lsm.StopOrder
---     FROM 
---         LineStopMap lsm
---     JOIN 
---         Stops s ON lsm.ID_Stop = s.ID
---     WHERE 
---         lsm.ID_Line = @LineID
---     ORDER BY 
---         lsm.StopOrder;
--- END;
+GO
+CREATE VIEW SalaryStatsByWorkerType AS
+	SELECT 
+		'Mechanics' AS WorkerType,
+		ROUND(AVG(E.Salary), 2) AS AvgSalary,
+		MIN(e.Salary) AS MinSalary,
+		MAX(e.Salary) AS MaxSalary,
+		SUM(e.Salary) AS TotalSalary
+	FROM 
+		Employees E
+	JOIN 
+		Mechanics M ON E.ID = M.ID_Mechanic
+	UNION ALL
+	SELECT 
+		'Inspectors' AS WorkerType,
+		ROUND(AVG(E.Salary), 2) AS AvgSalary,
+		MIN(E.Salary) AS MinSalary,
+		MAX(E.Salary) AS MaxSalary,
+		SUM(E.Salary) AS TotalSalary
+	FROM
+		Employees E
+	JOIN
+		Inspectors I ON E.ID = I.ID_Inspector
+	UNION ALL
+	SELECT
+		'Drivers' AS WorkerType,
+		ROUND(AVG(E.Salary), 2) AS AvgSalary,
+		MIN(E.Salary) AS MinSalary,
+		MAX(E.Salary) AS MaxSalary,
+		SUM(E.Salary) AS TotalSalary
+	FROM 
+		Employees E
+	JOIN
+		Drivers D ON E.ID = D.ID_Driver;
 
--- CREATE PROCEDURE GetDirectLinesBetweenStops
---     @StopName1 NVARCHAR(256),
---     @StopName2 NVARCHAR(256)
--- AS
--- BEGIN
---     SELECT DISTINCT
---         lsm1.ID_Line AS LineID,
---         l.Name AS LineName
---     FROM 
---         LineStopMap lsm1
---     JOIN 
---         Stops s1 ON lsm1.ID_Stop = s1.ID
---     JOIN 
---         LineStopMap lsm2 ON lsm1.ID_Line = lsm2.ID_Line
---     JOIN 
---         Stops s2 ON lsm2.ID_Stop = s2.ID
---     JOIN
---         Lines l ON lsm1.ID_Line = l.ID
---     WHERE 
---         s1.Name = @StopName1
---         AND s2.Name = @StopName2;
--- END;
+GO
 
--- CREATE PROCEDURE GetTimetableForStop
---     @StopName NVARCHAR(256)
--- AS
--- BEGIN
---     SELECT 
---         l.Name AS LineName,
---         t.Time AS DepartureTime,
---         t.Direction
---     FROM 
---         Stops s
---     JOIN 
---         LineStopMap lsm ON s.ID = lsm.ID_Stop
---     JOIN 
---         Timetables t ON lsm.ID = t.ID_LineStopRelation
---     JOIN 
---         Lines l ON lsm.ID_Line = l.ID
---     WHERE 
---         s.Name = @StopName
---     ORDER BY 
---         t.Time;
--- END;
+CREATE VIEW TicketSalesSummary AS
+	SELECT 
+		T.ID AS ID_Ticket,
+		Y.Year,
+		M.Month,
+		ISNULL(SUM(TS.Quantity), 0) AS AmountSold,
+		ISNULL(SUM(CAST(TS.Quantity AS Money) * T.Price), 0) AS TotalEarnings
+	FROM 
+		(SELECT DISTINCT YEAR(SaleDate) AS Year FROM TicketSales) Y
+	CROSS JOIN
+		(SELECT DISTINCT MONTH(SaleDate) AS Month FROM TicketSales) M
+	CROSS JOIN 
+		Tickets t
+	LEFT JOIN 
+		TicketSales TS ON T.ID = TS.TicketID AND YEAR(TS.SaleDate) = Y.Year AND MONTH(TS.SaleDate) = M.Month
+	GROUP BY 
+		T.ID, Y.Year, M.Month;
+GO
 
--- CREATE PROCEDURE GetTicketSalesReport
---     @LineID INT,
---     @StartDate DATE,
---     @EndDate DATE
--- AS
--- BEGIN
---     SELECT 
---         ts.SaleDate,
---         t.Type AS TicketType,
---         ts.Quantity,
---         t.Price,
---         (ts.Quantity * t.Price) AS TotalRevenue
---     FROM 
---         TicketSales ts
---     JOIN 
---         Tickets t ON ts.TicketID = t.ID
---     WHERE 
---         ts.LineID = @LineID
---         AND ts.SaleDate BETWEEN @StartDate AND @EndDate
---     ORDER BY 
---         ts.SaleDate;
--- END;
+CREATE VIEW LineFinesSummary AS
+	SELECT 
+		L.ID AS ID_Line,
+		L.Name AS LineName,
+		ISNULL(SUM(C.NumberOfFines), 0) AS NumberOfFines
+	FROM 
+		Lines L
+	LEFT JOIN 
+		ControlData C ON l.ID = C.ID_Line
+	GROUP BY
+		L.ID, L.Name;
+
+GO
+
+CREATE VIEW FinesSummaryByMonth AS
+	SELECT
+		MONTH(C.Date) AS Month,
+		ISNULL(SUM(C.NumberOfFines), 0) AS NumberOfFines
+	FROM
+		ControlData C
+	GROUP BY
+		MONTH(C.Date);
+
+GO
+
+CREATE FUNCTION CalculateInspectorBonus (@InspectorID INT)
+RETURNS MONEY
+AS
+BEGIN
+	DECLARE @Bonus MONEY;
+	DECLARE @Month INT;
+	DECLARE @Year INT;
+	IF MONTH(GETDATE()) = 1
+	BEGIN
+		SET @Month = 12;
+		SET @Year = YEAR(GETDATE()) - 1;
+	END
+	ELSE
+	BEGIN
+		SET @Month = MONTH(GETDATE()) - 1;
+		SET @Year = YEAR(GETDATE());
+	END
+	SELECT @Bonus = ISNULL(SUM(C.NumberOfFines) * 10, 0)
+	FROM ControlData C
+	WHERE C.ID_Inspector = @InspectorID
+		AND MONTH(C.Date) = @Month
+		AND YEAR(C.Date) = @Year;
+	RETURN @Bonus;
+END;
+
+GO
+
+CREATE FUNCTION CalculateNextInspectionDate (@VehicleID INT)
+RETURNS DATE
+AS
+BEGIN
+	DECLARE @ProductionDate DATE;
+	DECLARE @LastInspectionDate DATE;
+	DECLARE @FailureCount INT;
+	DECLARE @YearsSinceProduction INT;
+	DECLARE @MonthsToAdvance INT;
+	DECLARE @NextInspectionDate DATE;
+	SELECT
+		@ProductionDate = ProductionDate,
+		@LastInspectionDate = LastInspectionDate
+	FROM Vehicles
+	WHERE ID = @VehicleID;
+	SELECT
+		@FailureCount = COUNT(*)
+	FROM VehicleFailures
+	WHERE ID_Vehicle = @VehicleID;
+	SET @YearsSinceProduction = DATEDIFF(YEAR, @ProductionDate, @LastInspectionDate);
+	SET @MonthsToAdvance = (@YearsSinceProduction / 5) * 2 + @FailureCount;
+	SET @NextInspectionDate = DATEADD(MONTH, -@MonthsToAdvance, DATEADD(YEAR, 5, @LastInspectionDate));
+	RETURN @NextInspectionDate;
+END;
+
+GO
+
+CREATE VIEW VehicleNextInspection AS
+SELECT
+	V.ID AS VehicleID,
+	V.LastInspectionDate,
+	dbo.CalculateNextInspectionDate(V.ID) AS NextInspectionDate
+FROM Vehicles V;
+
+GO
+
+CREATE VIEW EmployeeSalaryWithBonus AS
+SELECT
+	E.ID AS EmployeeID,
+	E.Salary AS StandardSalary,
+	ISNULL(dbo.CalculateInspectorBonus(E.ID), 0) AS Bonus,
+	(E.Salary + ISNULL(dbo.CalculateInspectorBonus(E.ID), 0)) AS GrossTotalSalary,
+	(E.Salary + ISNULL(dbo.CalculateInspectorBonus(E.ID), 0)) * 0.8 AS NetTotalSalary
+FROM Employees E;
+
+GO
+
+CREATE PROCEDURE GetLineStops
+(
+	@LineID INT
+)
+AS
+	SELECT
+		S.ID AS StopID,
+		S.Name AS StopName,
+		LSM.StopOrder
+	FROM
+		LineStopMap LSM
+	JOIN
+		Stops S ON LSM.ID_Stop = S.ID
+	WHERE
+		LSM.ID_Line = @LineID
+	ORDER BY
+		LSM.StopOrder;
+
+GO
+
+CREATE PROCEDURE GetDirectLinesBetweenStops
+(
+	@StopName1 NVARCHAR(256),
+	@StopName2 NVARCHAR(256)
+)
+AS
+	SELECT DISTINCT
+		LSM1.ID_Line AS LineID,
+		L.Name AS LineName
+	FROM
+		LineStopMap LSM1
+	JOIN
+		Stops S1 ON LSM1.ID_Stop = S1.ID
+	JOIN
+		LineStopMap LSM2 ON LSM1.ID_Line = LSM2.ID_Line
+	JOIN
+		Stops S2 ON LSM2.ID_Stop = S2.ID
+	JOIN
+		Lines L ON LSM1.ID_Line = L.ID
+	WHERE
+		S1.Name = @StopName1
+		AND S2.Name = @StopName2;
+
+GO
+
+CREATE PROCEDURE GetTimetableForStop
+(
+	@StopName NVARCHAR(256)
+)
+AS
+	SELECT
+		L.Name AS LineName,
+		T.Time AS DepartureTime,
+		T.Direction
+	FROM
+		Stops S
+	JOIN
+		LineStopMap LSM ON S.ID = LSM.ID_Stop
+	JOIN
+		Timetables T ON LSM.ID = T.ID_LineStopMap
+	JOIN
+		Lines L ON LSM.ID_Line = L.ID
+	WHERE
+		S.Name = @StopName
+	ORDER BY
+		T.Time;
+
+GO
+
+CREATE PROCEDURE GetTicketSalesReport
+(
+	@LineID INT,
+	@StartDate DATE,
+	@EndDate DATE
+)
+AS
+	SELECT
+		TS.SaleDate,
+		T.Type AS TicketType,
+		TS.Quantity,
+		T.Price,
+		(TS.Quantity * T.Price) AS TotalRevenue
+	FROM 
+		TicketSales TS
+	JOIN
+		Tickets T ON TS.TicketID = T.ID
+	WHERE
+		TS.LineID = @LineID
+		AND TS.SaleDate BETWEEN @StartDate AND @EndDate
+	ORDER BY
+		TS.SaleDate;
