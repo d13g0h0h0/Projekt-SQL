@@ -570,6 +570,19 @@ AS
 	BEGIN
 		INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate)
 		SELECT I.TicketID, I.Quantity, I.LineID, I.SaleDate FROM INSERTED I;
+		DECLARE Ticket_Cursor2 CURSOR FOR
+		SELECT TicketID, Quantity FROM INSERTED;
+		OPEN Ticket_Cursor2
+		FETCH Ticket_Cursor2 INTO @TicketID, @Quantity
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			UPDATE Tickets
+			SET TotalNumber = TotalNumber - @Quantity
+			WHERE ID = @TicketID
+			FETCH Ticket_Cursor2 INTO @TicketID, @Quantity
+		END
+		CLOSE Ticket_Cursor2
+		DEALLOCATE Ticket_Cursor2
 		PRINT(N'Transakcja się powiodła.')
 	END
 	ELSE
