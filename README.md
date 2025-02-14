@@ -517,5 +517,13 @@ AS
 ```
 Przy próbie dodania nowych zakupów biletów do tabeli AddTicketSales sprawdza, czy jest dostępna odpowiednia liczba biletów. Jeżeli wystarcza biletów wszystkich żądanych typów, dane sprzedaży biletów są odzwierciedlane w bazie danych, w przeciwnym razie żadne dane nie są zmieniane i wyświetlane jest powiadomienie o niewystarczającej liczbie biletów.
 ## Przykładowe zapytania 
-
+##### Dodanie nowego pracownika
+```sql
+EXEC AddEmployee N'Stefan', N'Kotarski', N'98041365776', '1998-04-13', '2025-01-30', 5000.00, N'Kierowca', N'A';
+```
+##### Dopisanie informacji o nowej usterce
+```sql
+INSERT INTO VehicleFailures VALUES
+(1, NULL, '2025-01-22', NULL, N'Broken axle')
+```
 
