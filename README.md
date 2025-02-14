@@ -12,7 +12,7 @@ Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji 
 | Lines | Informacje na temat lini |
 | LinesStopMap | Łączy przystanki wraz z obsługiwanymi liniami pojazdów |
 | TimeTables | Godziny odjazdów  |
-| Types | rodzaje pojazdów |
+| Types | Modele pojazdów |
 | Vehicles | Informacje na temat posiadanych pojazdów |
 | Employees | Dane pracowników firmy |
 | Tickets | Informacje o sprzedawanych biletach |
@@ -54,7 +54,7 @@ BEGIN
 	RETURN @Bonus;
 END;
 ```
-Funkcja ta przyjmuje id kontrolera biletów, po czym na podstawie ilości wystawionych przez niego mandatów w ubiegłym miesiącu, oblicza stosowną premie pieniężną.
+Funkcja ta przyjmuje ID kontrolera biletów, po czym na podstawie ilości wystawionych przez niego mandatów w ubiegłym miesiącu, oblicza stosowną premię pieniężną.
 
 ##### CalculateNextInspectionDate
 ```sql
@@ -83,10 +83,10 @@ BEGIN
 	RETURN @NextInspectionDate;
 END;
 ``` 
-Funkcja przyjmuje id pojazdu, następnie sprawdza kiedy wypada jego następna rutynowa kontrola, oblicza jej datę na podstawie roku produkcji i ilości awarii pojazdu.
+Funkcja przyjmuje ID pojazdu, następnie sprawdza, kiedy wypada jego następna rutynowa kontrola, oblicza jej datę na podstawie roku produkcji i ilości awarii pojazdu.
 
 ## Widoki
-### VehicleNextInspection
+##### VehicleNextInspection
 ```sql
 CREATE VIEW VehicleNextInspection AS
 SELECT
@@ -95,7 +95,7 @@ SELECT
 	dbo.CalculateNextInspectionDate(V.ID) AS NextInspectionDate
 FROM Vehicles V;
 ```
-Widok wyświetla dla wszystkich pojazdów przedsiębiorstwa ich następną datę inspekcji
+Widok wyświetla dla wszystkich pojazdów przedsiębiorstwa ich następną datę inspekcji.
 #####  EmployeeSalaryWithBonus
 ```sql
 CREATE VIEW EmployeeSalaryWithBonus AS
@@ -116,7 +116,7 @@ CREATE VIEW BrokenVehicles AS
 	FROM VehicleFailures
 	WHERE RepairDate IS NULL;
 ```
-Widok pokazuje wszystkie obecnie uskodzone pojazdy.
+Widok pokazuje wszystkie obecnie uszkodzone pojazdy.
 
 ##### InspectorFinesByYear
 ```sql
@@ -134,7 +134,7 @@ CREATE VIEW InspectorFinesByYear AS
 	GROUP BY
 		I.ID_Inspector , Y.Year;
 ```
-Widok wyświetla sumaryczną ilość wystawionych mandatów dla każdego inspektora.
+Widok wyświetla sumaryczną ilość wystawionych mandatów dla każdego kontrolera.
 
 ##### SalaryStatsByWorkerType
 ```sql
@@ -194,7 +194,7 @@ CREATE VIEW TicketSalesSummary AS
 	GROUP BY 
 		T.ID, Y.Year, M.Month;
 ```
-Widok podsumuwujący sprzedaż biletów w miesięcznych interwałach czasowych.
+Widok podsumowujący sprzedaż biletów w miesięcznych interwałach czasowych.
 
 ##### LineFinesSummary
 ```sql
@@ -244,7 +244,7 @@ AS
 	ORDER BY
 		LSM.StopOrder;
 ```
-Po otrzymaniu id lini, wyświetla jej całą trasę.
+Po otrzymaniu ID linii, wyświetla jej całą trasę.
 
 ##### GetDirectLinesBetweenStops
 ```sql
@@ -323,6 +323,199 @@ AS
 	ORDER BY
 		TS.SaleDate;
 ```
-Po otrzymaniu id lini, oraz przedziału czasowego, zwraca statyski sprzedaży biletów dla tej lini w podanym okresie.
+Po otrzymaniu ID lini, oraz przedziału czasowego, zwraca statystyki sprzedaży biletów dla tej lini w podanym okresie.
+
+##### AddEmployee
+```sql
+CREATE PROCEDURE AddEmployee
+(
+	@FirstName NVARCHAR(128),
+	@LastName NVARCHAR(128),
+	@PESEL NVARCHAR(11),
+	@DateOfBirth DATE,
+	@DateOfEmployment DATE,
+	@Salary MONEY,
+	@Type NVARCHAR(20),
+	@Details NVARCHAR(20)
+)
+	AS
+	IF EXISTS(SELECT E.PESEL FROM Employees E WHERE PESEL = @PESEL)
+	BEGIN
+		PRINT(N'Ten numer PESEL jest już zajęty, dodanie nowego pracownika nie powiodło się.')
+	END
+	ELSE
+	BEGIN
+		IF @Type NOT IN(N'Kierowca', N'Mechanik', N'Kontroler')
+		BEGIN
+			PRINT(N'Podano niepoprawną kategorię pracownika, dodanie nowego pracownika nie powiodło się.')
+		END
+		ELSE
+		BEGIN
+			INSERT INTO Employees VALUES (@FirstName, @LastName, @PESEL, @DateOfBirth, @DateOfEmployment, @Salary)
+			DECLARE @ID INT = (SELECT E.ID FROM Employees E WHERE PESEL = @PESEL);
+			IF @Type = N'Kierowca' INSERT INTO Drivers VALUES (@ID, @Details)
+			IF @Type = N'Mechanik' INSERT INTO Mechanics VALUES (@ID, @Details)
+			IF @Type = N'Kontroler' INSERT INTO Inspectors VALUES (@ID, @Details)
+		END
+	END;
+```
+Po otrzymaniu danych o nowym pracowniku, sprawdza, czy podany numer PESEL nie był już wcześniej użyty w tabeli Employees. Jeżeli nie był, dane pracownika są dodawane do tabeli Employees oraz dokładnie jednej spośród tabel Drivers, Mechanics lub Inspectors, w zależności od roli pracownika podanej przedostatnim argumentem.
 ## Wyzwalacze
+##### DeleteDriver
+```sql
+CREATE TRIGGER DeleteDriver ON Drivers
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Driver FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
+```
+Po usunięciu danych jednego lub więcej kierowców z tabeli Drivers, automatycznie usuwa odpowiednie dane z tabeli Employees.
+##### DeleteMechanic
+```sql
+CREATE TRIGGER DeleteMechanic ON Mechanics
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Mechanic FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
+```
+Po usunięciu danych jednego lub więcej mechaników z tabeli Mechanics, automatycznie usuwa odpowiednie dane z tabeli Employees.
+##### DeleteInspector
+```sql
+CREATE TRIGGER DeleteInspector ON Inspectors
+AFTER DELETE
+AS
+	DECLARE Employee_Cursor CURSOR FOR
+	SELECT ID_Inspector FROM DELETED;
+	OPEN Employee_Cursor
+	DECLARE @ID INT
+	FETCH Employee_Cursor INTO @ID
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		DELETE FROM Employees WHERE ID = @ID;
+		FETCH Employee_Cursor INTO @ID
+	END
+	CLOSE Employee_Cursor
+	DEALLOCATE Employee_Cursor
+```
+Po usunięciu danych jednego lub więcej kontrolerów z tabeli Inspectors, automatycznie usuwa odpowiednie dane z tabeli Employees.
+##### AddFailure
+```sql
+CREATE TRIGGER AddFailure ON VehicleFailures
+AFTER INSERT
+AS
+	DECLARE Failure_Cursor CURSOR FOR
+	SELECT ID, ID_Vehicle, ID_Mechanic FROM DELETED;
+	OPEN Failure_Cursor
+	DECLARE @ID_Row INT
+	DECLARE @ID_Vehicle INT
+	DECLARE @ID_Mechanic INT
+	FETCH Failure_Cursor INTO @ID_Row, @ID_Vehicle, @ID_Mechanic
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF @ID_Mechanic IS NULL
+		BEGIN
+			DECLARE @Vehicle_Depot INT
+			SELECT @Vehicle_Depot = VDM.ID_Depot
+			FROM Vehicles V JOIN VehicleDepotMap VDM ON V.ID = VDM.ID_Vehicle
+			WHERE V.ID = @ID_Vehicle
+
+			IF EXISTS (
+				SELECT M.ID_Mechanic
+				FROM Mechanics M JOIN MechanicDepotMap MDM ON M.ID_Mechanic = MDM.ID_Mechanic
+				WHERE MDM.ID_Depot = @Vehicle_Depot AND M.ID_Mechanic NOT IN 
+				(SELECT VF.ID_Mechanic FROM VehicleFailures VF WHERE VF.RepairDate IS NULL)
+			)
+			BEGIN
+				SET @ID_Mechanic = (
+					SELECT TOP 1 M.ID_Mechanic
+					FROM Mechanics M JOIN MechanicDepotMap MDM ON M.ID_Mechanic = MDM.ID_Mechanic
+					WHERE MDM.ID_Depot = @Vehicle_Depot AND M.ID_Mechanic NOT IN 
+					(SELECT VF.ID_Mechanic FROM VehicleFailures VF WHERE VF.RepairDate IS NULL AND VF.ID_Mechanic IS NOT NULL)
+				)
+				UPDATE VehicleFailures
+				SET ID_Mechanic = @ID_Mechanic
+				WHERE ID = @ID_Row
+				PRINT(N'Udało się znaleźć wolnego mechanika, dodano go do zgłoszenia.')
+			END
+			ELSE
+			BEGIN
+				PRINT(N'Nie udało się znaleźć wolnego mechanika.')
+			END
+		END
+		FETCH Failure_Cursor INTO @ID_Vehicle, @ID_Mechanic
+	END
+	CLOSE Failure_Cursor
+	DEALLOCATE Failure_Cursor
+```
+Po dodaniu informacji o jednej lub większej liczbie usterek do tabeli VehicleFailures z wartością ```sql NULL``` w polu ID_Mechanic, próbuje znaleźć mechaników, którzy pracują w hangarze danego pojazdu i nie są zajęci naprawianiem innego pojazdu. W przypadku znalezienia takowych, jeden z nich jest przypisywany do naprawy danego pojazdu.
+##### AddTicketSale
+```sql
+CREATE TRIGGER AddTicketSale ON TicketSales
+INSTEAD OF INSERT
+AS
+	DECLARE Ticket_Cursor CURSOR FOR
+	SELECT TicketID, Quantity FROM INSERTED;
+	OPEN Ticket_Cursor
+	DECLARE @TicketID INT
+	DECLARE @Quantity INT
+	DECLARE @TooFewTickets BIT
+	SET @TooFewTickets = 0
+	FETCH Ticket_Cursor INTO @TicketID, @Quantity
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+		IF (SELECT T.TotalNumber FROM Tickets T WHERE T.ID = @TicketID) < @Quantity
+		BEGIN SELECT * FROM Tickets
+			SET @TooFewTickets = 1
+		END
+		FETCH Ticket_Cursor INTO @TicketID, @Quantity
+	END
+	CLOSE Ticket_Cursor
+	DEALLOCATE Ticket_Cursor
+	IF @TooFewTickets = 0
+	BEGIN
+		INSERT INTO TicketSales (TicketID, Quantity, LineID, SaleDate)
+		SELECT I.TicketID, I.Quantity, I.LineID, I.SaleDate FROM INSERTED I;
+		DECLARE Ticket_Cursor2 CURSOR FOR
+		SELECT TicketID, Quantity FROM INSERTED;
+		OPEN Ticket_Cursor2
+		FETCH Ticket_Cursor2 INTO @TicketID, @Quantity
+		WHILE @@FETCH_STATUS = 0
+		BEGIN
+			UPDATE Tickets
+			SET TotalNumber = TotalNumber - @Quantity
+			WHERE ID = @TicketID
+			FETCH Ticket_Cursor2 INTO @TicketID, @Quantity
+		END
+		CLOSE Ticket_Cursor2
+		DEALLOCATE Ticket_Cursor2
+		PRINT(N'Transakcja się powiodła.')
+	END
+	ELSE
+	BEGIN
+		PRINT(N'Transakcja się nie powiodła, brakuje biletów.')
+	END
+```
+Przy próbie dodania nowych zakupów biletów do tabeli AddTicketSales sprawdza, czy jest dostępna odpowiednia liczba biletów. Jeżeli wystarcza biletów wszystkich żądanych typów, dane sprzedaży biletów są odzwierciedlane w bazie danych, w przeciwnym razie żadne dane nie są zmieniane i wyświetlane jest powiadomienie o niewystarczającej liczbie biletów.
 ## Przykładowe zapytania 
+
+
