@@ -6,6 +6,26 @@ Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji 
 ## Diagram ER
 ## Schemat bazy danych
 ## Tabele
+| Nazwa tabeli | Przechowywane dane |
+| --- | --- |
+| Stops | Informacje na temat przystanków |
+| Lines | Informacje na temat lini |
+| LinesStopMap | Łączy przystanki wraz z obsługiwanymi liniami pojazdów |
+| TimeTables | Godziny odjazdów  |
+| Types | rodzaje pojazdów |
+| Vehicles | Informacje na temat posiadanych pojazdów |
+| Employees | Dane pracowników firmy |
+| Tickets | Informacje o sprzedawanych biletach |
+| TicketSales | Historia sprzedaży biletów |
+| Drivers | Kategorie praw jazdy kierowców |
+| Mechanics | Informacja na temat specjalizacji mechanika |
+| Inspectors | Znane języki obce kontrolerów |
+| LineDriveMap | Przypisuje kierowców do poszczególnych lini |
+| Depots | Informacje na temat hangarów |
+| VehicleDepotMap | Informacje na temat ulokowania pojazdów w hangarach |
+| MechanicDepotMap | Rozmieszczenie mechaników w hangarach |
+| ControlData | Historia kontroli biletów |
+| VehicleFailures | Historia awarii pojazdów |
 ## Funkcje
 ##### CalculateInspectorBonus
 ```sql 
