@@ -4,6 +4,7 @@
 Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji miejskiej. Ułatwia on pielęgnowanie i gromadzenie różnych danych statysycznych potrzebnych do prawidłowego działania firmy. Oferuje on również uzyskiwanie przydatnych informacji dla konsumentów takich jak np. połączenia bezpośrednie między przystankami. 
 ## Strategia pielęgnacji 
 ## Diagram ER
+![ER Diagram](./ER diagram.png)
 ## Schemat bazy danych
 ## Tabele
 | Nazwa tabeli | Przechowywane dane |
