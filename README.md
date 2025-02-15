@@ -6,6 +6,7 @@ Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji 
 ## Diagram ER
 ![ER Diagram](./ERdiagram.png)
 ## Schemat bazy danych
+![Schemat bazy](./SchematBazy.png)
 ## Tabele
 | Nazwa tabeli | Przechowywane dane |
 | --- | --- |
