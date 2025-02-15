@@ -14,7 +14,7 @@ Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji 
 | TimeTables | Godziny odjazdów  |
 | Types | Modele pojazdów |
 | Vehicles | Informacje na temat posiadanych pojazdów |
-| Employees | Dane pracowników firmy |
+| Employees | Dane pracowników firmy, z której dziedziczą Drivers, Mechanics i Inspectors (Table-Per-Type) |
 | Tickets | Informacje o sprzedawanych biletach |
 | TicketSales | Historia sprzedaży biletów |
 | Drivers | Kategorie praw jazdy kierowców |
