@@ -115,7 +115,7 @@ CREATE TABLE Timetables(
 	Direction NCHAR NOT NULL,
 	CONSTRAINT PK_Timetables PRIMARY KEY(ID),
 	CONSTRAINT FK_ID_LineStopMap FOREIGN KEY(ID_LineStopMap) REFERENCES LineStopMap(ID),
-	CONSTRAINT CHK_Direction_AB CHECK (Direction IN (N'A', N'B'))
+	CONSTRAINT CK_Direction_AB CHECK (Direction IN (N'A', N'B'))
 );
 
 CREATE TABLE Types(
@@ -149,24 +149,24 @@ CREATE TABLE Employees(
 );
 
 CREATE TABLE Tickets (
-    ID INT IDENTITY(0, 1),
-    Price MONEY NOT NULL,
-    DurationMinutes INT NOT NULL,
-    Type NVARCHAR(10) NOT NULL,
+	ID INT IDENTITY(0, 1),
+	Price MONEY NOT NULL,
+	DurationMinutes INT NOT NULL,
+	Type NVARCHAR(10) NOT NULL,
 	TotalNumber INT NOT NULL,
 	CONSTRAINT PK_Tickets PRIMARY KEY (ID),
-    CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
+	CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
 );
 
 CREATE TABLE TicketSales (
-    ID INT IDENTITY(0, 1),
+	ID INT IDENTITY(0, 1),
 	TicketID INT NOT NULL,
-    Quantity INT NOT NULL,
-    LineID INT NOT NULL,
-    SaleDate DATE NOT NULL DEFAULT GETDATE(),
+	Quantity INT NOT NULL,
+	LineID INT NOT NULL,
+	SaleDate DATE NOT NULL DEFAULT GETDATE(),
 	CONSTRAINT PK_TicketSales PRIMARY KEY(ID),
-    CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID),
-    CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID),
+	CONSTRAINT FK_TicketID FOREIGN KEY (TicketID) REFERENCES Tickets(ID),
+	CONSTRAINT FK_LineID FOREIGN KEY (LineID) REFERENCES Lines(ID),
 	CONSTRAINT CK_Quantity CHECK (Quantity > 0)
 );
 
@@ -225,23 +225,23 @@ CREATE TABLE MechanicDepotMap(
 );
 
 CREATE TABLE ControlData (
-    ID INT IDENTITY(0, 1) PRIMARY KEY,
-    ID_Inspector INT NULL,
-    ID_Line INT NOT NULL,
-    Date DATE NOT NULL,
-    NumberOfFines INT NOT NULL,
-    CONSTRAINT FK_ID_Inspector_ControlData FOREIGN KEY (ID_Inspector) REFERENCES Inspectors(ID_Inspector) ON DELETE SET NULL,
-    CONSTRAINT FK_ID_Line_ControlData FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
+	ID INT IDENTITY(0, 1) PRIMARY KEY,
+	ID_Inspector INT NULL,
+	ID_Line INT NOT NULL,
+	Date DATE NOT NULL,
+	NumberOfFines INT NOT NULL,
+	CONSTRAINT FK_ID_Inspector_ControlData FOREIGN KEY (ID_Inspector) REFERENCES Inspectors(ID_Inspector) ON DELETE SET NULL,
+	CONSTRAINT FK_ID_Line_ControlData FOREIGN KEY (ID_Line) REFERENCES Lines(ID)
 );
 
 CREATE TABLE VehicleFailures (
-    ID INT IDENTITY(0, 1) PRIMARY KEY,
-    ID_Vehicle INT NOT NULL,
+	ID INT IDENTITY(0, 1) PRIMARY KEY,
+	ID_Vehicle INT NOT NULL,
 	ID_Mechanic INT DEFAULT NULL,
-    ReportDate DATE NOT NULL,
-    RepairDate DATE DEFAULT NULL,
-    Description NVARCHAR(MAX),
-    CONSTRAINT FK_ID_Vehicle_VehicleFailures FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
+	ReportDate DATE NOT NULL,
+	RepairDate DATE DEFAULT NULL,
+	Description NVARCHAR(MAX),
+	CONSTRAINT FK_ID_Vehicle_VehicleFailures FOREIGN KEY (ID_Vehicle) REFERENCES Vehicles(ID),
 	CONSTRAINT FK_ID_Repairing_Mechanic_VehicleFailures FOREIGN KEY (ID_Mechanic) REFERENCES Mechanics(ID_Mechanic) ON DELETE SET NULL
 );
 
