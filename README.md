@@ -101,11 +101,6 @@ CONSTRAINT UC_LineStopOrder UNIQUE(ID_Line, StopOrder)
 CONSTRAINT UC_PESEL UNIQUE(PESEL)
 ```
 ### Pozostałe Indeksy
-##### Indeks na kolumnie Name w tabeli Stops
-```sql
-CREATE INDEX IX_Stops_Name ON Stops(Name);
-```
-Używany w procedurach GetTimetableForStop i GetDirectLinesBetweenStops.
 ##### Indeks na kolumnie ID_Line w tabeli LineStopMap
 ```sql
 CREATE INDEX IX_LineStopMap_ID_Line ON LineStopMap(ID_Line);
