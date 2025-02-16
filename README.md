@@ -3,10 +3,119 @@
 ## Założenia 
 Projekt jest implementacją bazy danych lokalnego przedsiębiorstwa komunikacji miejskiej. Ułatwia on pielęgnowanie i gromadzenie różnych danych statysycznych potrzebnych do prawidłowego działania firmy. Oferuje on również uzyskiwanie przydatnych informacji dla konsumentów takich jak np. połączenia bezpośrednie między przystankami. 
 ## Strategia pielęgnacji 
+Pełne kopie zapasowe powinny być wykonywane conajmniej raz w tygodniu, aby zapewnienić minimalne utraty danych w przypadku awarii.
+Kopie te zostaną następnie archiwizowane na zewnętrznych nośnikach. W celach optymalizacyjnych regularnie będą monitorowane zapytania, by indyfikować, a następnie modyfikować te wolno działające. 
 ## Diagram ER
 ![ER Diagram](./ERdiagram.png)
 ## Schemat bazy danych
 ![Schemat bazy](./SchematBazy.png)
+## Indeksy
+### Indeksy PRIMARY KEY 
+##### Stops: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Stops PRIMARY KEY(ID)
+```
+##### Lines: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Lines PRIMARY KEY(ID)
+```
+##### LineStopMap: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_LineStopMap PRIMARY KEY(ID)
+```
+##### Timetables: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Timetables PRIMARY KEY(ID)
+```
+##### Types: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Types PRIMARY KEY(ID)
+```
+##### Vehicles: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Vehicles PRIMARY KEY(ID)
+```
+##### Employees: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Employees PRIMARY KEY(ID)
+```
+##### Tickets: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Tickets PRIMARY KEY(ID)
+```
+##### TicketSales: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_TicketSales PRIMARY KEY(ID)
+```
+##### Drivers: Indeks na kolumnie ID_Driver
+```sql
+CONSTRAINT FK_ID_Driver PRIMARY KEY(ID_Driver)
+```
+##### Mechanics: Indeks na kolumnie ID_Mechanic
+```sql
+CONSTRAINT FK_ID_Mechanic PRIMARY KEY(ID_Mechanic)
+```
+##### Inspectors: Indeks na kolumnie ID_Inspector
+```sql
+CONSTRAINT FK_ID_Inspector PRIMARY KEY(ID_Inspector)
+```
+##### LineDriverMap: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_LineDriverMap PRIMARY KEY(ID)
+```
+##### Depots: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_Depots PRIMARY KEY(ID)
+```
+##### VehicleDepotMap: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_VehicleDepotMap PRIMARY KEY(ID)
+```
+##### MechanicDepotMap: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_MechanicDepotMap PRIMARY KEY(ID)
+```
+##### ControlData: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_ControlData PRIMARY KEY(ID)
+```
+##### VehicleFailures: Indeks na kolumnie ID
+```sql
+CONSTRAINT PK_VehicleFailures PRIMARY KEY(ID)
+```
+### Indeksy UNIQUE
+##### Stops: Indeks na kolumnie Name
+```sql
+Name NVARCHAR(256) UNIQUE NOT NULL
+```
+##### Lines: Indeks na kolumnie Name
+```sql
+Name NVARCHAR(10) UNIQUE NOT NULL
+```
+##### LineStopMap: Indeks na kolumnach ID_Line i StopOrder
+```sql
+CONSTRAINT UC_LineStopOrder UNIQUE(ID_Line, StopOrder)
+```
+##### Employees: Indeks na kolumnie PESEL
+```sql
+CONSTRAINT UC_PESEL UNIQUE(PESEL)
+```
+### Pozostałe Indeksy
+##### Indeks na kolumnie Name w tabeli Stops
+```sql
+CREATE INDEX IX_Stops_Name ON Stops(Name);
+```
+Używany w procedurach GetTimetableForStop i GetDirectLinesBetweenStops.
+##### Indeks na kolumnie ID_Line w tabeli LineStopMap
+```sql
+CREATE INDEX IX_LineStopMap_ID_Line ON LineStopMap(ID_Line);
+```
+Używany w procedurach GetLineStops i GetDirectLinesBetweenStops.
+##### Indeks na kolumnie ID_Stop w tabeli LineStopMap
+```sql
+CREATE INDEX IX_LineStopMap_ID_Stop ON LineStopMap(ID_Stop);
+```
+Używany w procedurze GetTimetableForStop.
 ## Tabele
 | Nazwa tabeli | Przechowywane dane |
 | --- | --- |
@@ -528,4 +637,15 @@ EXEC AddEmployee N'Stefan', N'Kotarski', N'98041365776', '1998-04-13', '2025-01-
 INSERT INTO VehicleFailures VALUES
 (1, NULL, '2025-01-22', NULL, N'Broken axle')
 ```
-
+##### Wyświetlenie wszystkich przystanków dla danej linii
+```sql
+EXEC GetLineStops @LineID = 1;
+```
+##### Wyświetlenie wszystkich linii, którymi można się bezpośrednio poruszać między dwoma przystankami
+```sql
+EXEC GetDirectLinesBetweenStops @StopName1 = N'Piotrkowska Centrum', @StopName2 = N'Plac Niepodległości';
+```
+##### Wyświetlenie rozkładu jazdy dla danego przystanku
+```sql
+EXEC GetTimetableForStop @StopName = N'Piotrkowska Centrum';
+```
