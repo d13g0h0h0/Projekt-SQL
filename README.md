@@ -7,6 +7,36 @@ Pełne kopie zapasowe powinny być wykonywane conajmniej raz w tygodniu, aby zap
 Kopie te zostaną następnie archiwizowane na zewnętrznych nośnikach. W celach optymalizacyjnych regularnie będą monitorowane zapytania, by indyfikować, a następnie modyfikować te wolno działające. 
 ## Diagram ER
 ![ER Diagram](./ERdiagram.png)
+## Pozostałe więzy integralności danych
+##### UC_LineStopOrder
+```sql
+CONSTRAINT UC_LineStopOrder UNIQUE(ID_Line, StopOrder)
+```
+##### CK_Direction_AB
+```sql
+CONSTRAINT CK_Direction_AB CHECK (Direction IN (N'A', N'B'))
+```
+Zapewnia, aby były przechowywane poprawne wartości dla kierunku jazdy w rozkładzie odjazdów z przystanków.
+##### CK_Category_Types
+```sql
+CONSTRAINT CK_Category_Types CHECK (Category IN (N'A', N'T'))
+```
+Zapewnia, aby modele pojazdów mogły być oznaczone jednoznacznie tylko jako autobusy albo tramwaje.
+##### CK_TicketType
+```sql
+CONSTRAINT CK_TicketType CHECK (Type IN (N'reduced', N'standard'))
+```
+Zapewnia, aby rodzaje biletów pojazdów mogły być oznaczone jednoznacznie tylko jako normalne albo ulgowe.
+##### CK_Quantity
+```sql
+CONSTRAINT CK_Quantity CHECK (Quantity > 0)
+```
+Zapewnia, aby rejestrowane sprzedaże biletów zawierały dodatnią ich liczbę.
+##### CK_Category_Depots
+```sql
+CONSTRAINT CK_Category_Depots CHECK (Category IN (N'A', N'T'))
+```
+Zapewnia, aby hangary pojazdów mogły być oznaczone jednoznacznie tylko jako przechowujące autobusy albo tramwaje.
 ## Schemat bazy danych
 ![Schemat bazy](./SchematBazy.png)
 ## Indeksy
